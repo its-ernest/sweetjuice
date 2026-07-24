@@ -102,6 +102,24 @@ func CreateNewProject(targetDir string) {
 		utils.RunCmd("go", "mod", "edit", "-dropreplace=github.com/sweet-juice/sweetjuice", targetGoMod)
 		// Add new replace pointing to the absolute coreDir
 		utils.RunCmd("go", "mod", "edit", "-replace=github.com/sweet-juice/sweetjuice="+coreDir, targetGoMod)
+
+		// Recursive replacement of module placeholder in source files
+		fmt.Println("Updating internal package imports...")
+		moduleName := filepath.Base(targetDir)
+		filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
+			if err == nil && !info.IsDir() && strings.HasSuffix(path, ".go") {
+				data, err := os.ReadFile(path)
+				if err == nil {
+					content := string(data)
+					// Replace placeholder module name 'helloworld' with actual module name
+					newContent := strings.ReplaceAll(content, "helloworld/", moduleName+"/")
+					if newContent != content {
+						os.WriteFile(path, []byte(newContent), info.Mode())
+					}
+				}
+			}
+			return nil
+		})
 	}
 
 	android.SetupAndroidLocalProperties(targetDir)
@@ -110,8 +128,10 @@ func CreateNewProject(targetDir string) {
 	_ = os.Chdir(targetDir)
 	defer func() { _ = os.Chdir(origWd) }()
 
-	// Trigger frontend build as specified in config.ini
-	utils.BuildFrontend()
+	// Trigger frontend build as specified in config.ini only if frontend folder exists
+	if utils.DirExists("frontend") {
+		utils.BuildFrontend()
+	}
 
 	// Initialize Go Mobile build tools only if missing
 	utils.EnsureGoMobileTools()
@@ -293,10 +313,11 @@ func ExecuteSetup(target string) {
 	}
 
 	if utils.DirExists(crossRepoPath) {
-		fmt.Printf("Repository already exists at %s. Updating...\n", crossRepoPath)
+		fmt.Printf("Repository already exists at %s. Resetting to latest remote state...\n", crossRepoPath)
 		origWd, _ := os.Getwd()
 		_ = os.Chdir(crossRepoPath)
-		utils.RunCmd("git", "pull", "origin", "main")
+		utils.RunCmd("git", "fetch", "origin")
+		utils.RunCmd("git", "reset", "--hard", "origin/main")
 		_ = os.Chdir(origWd)
 	} else {
 		utils.RunCmd("gh", "repo", "clone", githubUser+"/juice-cross", crossRepoPath)

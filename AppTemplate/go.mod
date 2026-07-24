@@ -16,5 +16,5 @@ require (
 
 tool golang.org/x/mobile/cmd/gobind
 
-// replace github.com/sweet-juice/sweetjuice => ../
+replace github.com/sweet-juice/sweetjuice => ../
  

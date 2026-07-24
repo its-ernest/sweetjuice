@@ -32,6 +32,13 @@ func SetGlobalApp(app *Application) {
 	globalAppInstance = app
 }
 
+var uiEventDispatcher func(id string, event string, data interface{}) error
+
+// SetUIEventDispatcher registers the global dispatcher function to handle native UI events in Go.
+func SetUIEventDispatcher(dispatcher func(id string, event string, data interface{}) error) {
+	uiEventDispatcher = dispatcher
+}
+
 // MobileBridge is a dedicated wrapper struct that gobind can parse into a Java Class.
 type MobileBridge struct{}
 
@@ -45,20 +52,25 @@ func (b *MobileBridge) CallGoBackend(methodKey string, jsonArgsPayload string) s
 		return `{"error": "Application core runtime context not active"}`
 	}
 
-	var rawArgs []json.RawMessage
-	if err := json.Unmarshal([]byte(jsonArgsPayload), &rawArgs); err != nil {
-		return fmt.Sprintf(`{"error": "Failed to extract arguments payload: %s"}`, err.Error())
+	if methodKey == "ui:event" {
+		if uiEventDispatcher == nil {
+			return `{"error": "UI event dispatcher not set"}`
+		}
+		var payload struct {
+			ID   string      `json:"id"`
+			Name string      `json:"name"`
+			Data interface{} `json:"data"`
+		}
+		if err := json.Unmarshal([]byte(jsonArgsPayload), &payload); err != nil {
+			return fmt.Sprintf(`{"error": "Failed to parse UI event payload: %s"}`, err.Error())
+		}
+		if err := uiEventDispatcher(payload.ID, payload.Name, payload.Data); err != nil {
+			return fmt.Sprintf(`{"error": "%s"}`, err.Error())
+		}
+		return `{"status": "ok"}`
 	}
 
-	result, err := globalAppInstance.InvokeCall(methodKey, rawArgs)
-	if err != nil {
-		return fmt.Sprintf(`{"error": %q}`, err.Error())
-	}
-
-	responsePayload, _ := json.Marshal(map[string]interface{}{
-		"result": result,
-	})
-	return string(responsePayload)
+	return `{"error": "Unsupported method call"}`
 }
 
 func (b *MobileBridge) PollNativeEvent() string {
@@ -94,20 +106,4 @@ func HandleNativeAction(methodKey string, jsonArgsPayload string) string {
 		"result": result,
 	})
 	return string(responsePayload)
-}
-
-// RequestAssetBytes acts as a direct memory array provider for the native layout
-func (b *MobileBridge) RequestAssetBytes(urlPath string) []byte {
-	if globalAppInstance == nil {
-		return []byte("Asset Server Offline")
-	}
-	return globalAppInstance.ReadAsset(urlPath).Data
-}
-
-// RequestAssetMime returns correct content headers to the WebView controller
-func (b *MobileBridge) RequestAssetMime(urlPath string) string {
-	if globalAppInstance == nil {
-		return "text/plain"
-	}
-	return globalAppInstance.ReadAsset(urlPath).MimeType
 }

@@ -82,6 +82,33 @@ func RunCmd(name string, args ...string) {
 	}
 }
 
+// ReplaceInFiles recursively searches for a string in all files within a directory and replaces it with another.
+func ReplaceInFiles(root, old, new string, extension string) error {
+	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() || !strings.HasSuffix(path, extension) {
+			return nil
+		}
+
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		content := string(data)
+		if strings.Contains(content, old) {
+			newContent := strings.ReplaceAll(content, old, new)
+			err = os.WriteFile(path, []byte(newContent), info.Mode())
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 // BuildFrontend executes the frontend build command defined in the config.ini file.
 func BuildFrontend() {
 	config := LoadConfig()
