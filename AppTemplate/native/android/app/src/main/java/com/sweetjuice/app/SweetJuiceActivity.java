@@ -1,123 +1,82 @@
 package com.sweetjuice.app;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.webkit.JavascriptInterface;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
+import android.util.Log;
+import android.view.Gravity;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.sweetjuice.plugin.SweetJuicePlugin;
-import java.io.ByteArrayInputStream;
-import java.util.Map;
 import sweetjuice.Sweetjuice;
 
 public class SweetJuiceActivity extends AppCompatActivity {
 
-    private WebView mWebView;
-    private final Handler mHandler = new Handler(Looper.getMainLooper());
-    private boolean mIsPolling = true;
+    private UIManager mUIManager;
+    private LinearLayout rootLayout;
 
-    @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Attach this activity context to all plugins so they can perform UI actions/permissions
+        ((SweetJuiceApplication) getApplication()).setActiveActivity(this);
+
         SweetJuiceApplication app = (SweetJuiceApplication) getApplication();
         for (SweetJuicePlugin plugin : app.getPlugins().values()) {
             plugin.onAttach(this);
         }
 
-        mWebView = new WebView(this);
+        ScrollView scrollView = new ScrollView(this);
+        scrollView.setFillViewport(true);
+        scrollView.setBackgroundColor(Color.WHITE);
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-            getWindow().setFlags(
-                android.view.WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
-                android.view.WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
-            );
+        rootLayout = new LinearLayout(this);
+        rootLayout.setOrientation(LinearLayout.VERTICAL);
+        rootLayout.setBackgroundColor(Color.WHITE);
+        scrollView.addView(rootLayout);
+        setContentView(scrollView);
+
+        mUIManager = new UIManager(this, rootLayout);
+
+        showFallback("Starting Sweet Juice...");
+
+        try {
+            Sweetjuice.startApplication();
+            Sweetjuice.reRender();
+        } catch (Throwable t) {
+            Log.e("SweetJuice", "Go bridge failed", t);
+            showFallback("Bridge error: " + t.getMessage());
+            return;
         }
 
-        if (androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.ALGORITHMIC_DARKENING)) {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                mWebView.getSettings().setAlgorithmicDarkeningAllowed(true);
-            }
-        }
+        handleIntent(getIntent());
+    }
 
-        setContentView(mWebView);
+    void showFallback(String msg) {
+        runOnUiThread(() -> {
+            rootLayout.removeAllViews();
+            TextView tv = new TextView(SweetJuiceActivity.this);
+            tv.setText(msg);
+            tv.setTextSize(18);
+            tv.setTextColor(Color.DKGRAY);
+            tv.setGravity(Gravity.CENTER);
+            rootLayout.addView(tv);
+        });
+    }
 
-        mWebView.getSettings().setJavaScriptEnabled(true);
-        mWebView.getSettings().setDomStorageEnabled(true);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            mWebView.getSettings().setMixedContentMode(android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-        }
-        mWebView.getSettings().setAllowFileAccess(true);
-        mWebView.getSettings().setAllowContentAccess(true);
-        mWebView.getSettings().setAllowFileAccessFromFileURLs(true);
-        mWebView.getSettings().setAllowUniversalAccessFromFileURLs(true);
-        mWebView.getSettings().setUseWideViewPort(true);
-        mWebView.getSettings().setLoadWithOverviewMode(true);
-
-        mWebView.addJavascriptInterface(new Object() {
-            @JavascriptInterface
-            public String callGo(String methodKey, String jsonArgsPayload) {
-                return Sweetjuice.handleMessageFromFrontend(methodKey, jsonArgsPayload);
-            }
-        }, "SweetJuiceBind");
-
-        mWebView.setWebViewClient(new WebViewClient() {
-            @Override
-            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                String urlStr = request.getUrl().toString();
-                String assetKey = urlStr.replace("https://sweetjuice.local/", "");
-                
-                if (assetKey.contains("?")) assetKey = assetKey.split("\\?")[0];
-                if (assetKey.contains("#")) assetKey = assetKey.split("#")[0];
-                if (assetKey.isEmpty() || assetKey.equals("/")) assetKey = "index.html";
-
-                byte[] fileBytes = Sweetjuice.requestAssetBytes(assetKey);
-                String mimeType = Sweetjuice.requestAssetMime(assetKey);
-                if (mimeType == null || mimeType.isEmpty()) mimeType = "text/plain";
-
-                return new WebResourceResponse(mimeType, "UTF-8", new ByteArrayInputStream(fileBytes));
-            }
-
-            @Override
-            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
-                super.onPageStarted(view, url, favicon);
-                String js = "if (!window.SweetJuiceEvents) {" +
-                        "  window.SweetJuiceEvents = {" +
-                        "    listeners: {}," +
-                        "    on: function(name, cb) { " +
-                        "      if(!this.listeners[name]) this.listeners[name] = []; " +
-                        "      this.listeners[name].push(cb); " +
-                        "    }," +
-                        "    dispatch: function(obj) { " +
-                        "      var name = obj.name; var data = obj.data; " +
-                        "      if(this.listeners[name]) { " +
-                        "        this.listeners[name].forEach(function(cb) { try { cb(data); } catch(e) { console.error(e); } }); " +
-                        "      } " +
-                        "    }" +
-                        "  };" +
-                        "  if (window.SweetJuiceBind) {" +
-                        "    window.SweetJuiceBind.on = window.SweetJuiceEvents.on.bind(window.SweetJuiceEvents);" +
-                        "    window.SweetJuiceBind.dispatch = window.SweetJuiceEvents.dispatch.bind(window.SweetJuiceEvents);" +
-                        "  }" +
-                        "}";
-                view.evaluateJavascript(js, null);
+    public void renderUI(final String json) {
+        Log.d("SweetJuice", "Activity.renderUI called, length=" + (json != null ? json.length() : 0));
+        runOnUiThread(() -> {
+            try {
+                mUIManager.render(json);
+            } catch (Exception e) {
+                Log.e("SweetJuice", "UIManager.render crashed", e);
             }
         });
-
-        mWebView.loadUrl("https://sweetjuice.local/");
-        startEventPolling();
-
-        // Handle initial intent for Deep Linking
-        handleIntent(getIntent());
     }
 
     @Override
@@ -135,45 +94,19 @@ public class SweetJuiceActivity extends AppCompatActivity {
         }
     }
 
-    private void startEventPolling() {
-        new Thread(() -> {
-            while (mIsPolling) {
-                String eventJson = Sweetjuice.pollNativeEvent();
-                if (eventJson != null && !eventJson.isEmpty()) {
-                    mHandler.post(() -> {
-                        String script = "if(window.SweetJuiceBind && window.SweetJuiceBind.dispatch) { " +
-                                "window.SweetJuiceBind.dispatch(" + eventJson + "); " +
-                                "} else if(window.SweetJuiceEvents && window.SweetJuiceEvents.dispatch) { " +
-                                "window.SweetJuiceEvents.dispatch(" + eventJson + "); " +
-                                "}";
-                        mWebView.evaluateJavascript(script, null);
-                    });
-                }
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-        }).start();
-    }
-
     @Override
     protected void onPause() {
         super.onPause();
-        if (mWebView != null) mWebView.onPause();
-        Sweetjuice.handleNativeAction("lifecycle:pause", "");
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (mWebView != null) mWebView.onResume();
-        Sweetjuice.handleNativeAction("lifecycle:resume", "");
+        ((SweetJuiceApplication) getApplication()).setActiveActivity(this);
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         SweetJuiceApplication app = (SweetJuiceApplication) getApplication();
         for (SweetJuicePlugin plugin : app.getPlugins().values()) {
@@ -192,8 +125,9 @@ public class SweetJuiceActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        mIsPolling = false;
-        if (mWebView != null) mWebView.destroy();
+        if (((SweetJuiceApplication) getApplication()).getActiveActivity() == this) {
+            ((SweetJuiceApplication) getApplication()).setActiveActivity(null);
+        }
         super.onDestroy();
     }
 }

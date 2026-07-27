@@ -14,13 +14,6 @@ import (
 	"strings"
 )
 
-// Fatal prints a formatted error message to stderr and exits the process with status 1.
-func Fatal(msg string, err error) {
-	fmt.Fprintf(os.Stderr, "Fatal: %s: %v\n", msg, err)
-	os.Exit(1)
-}
-
-// FileExists returns true if the specified file exists and is not a directory.
 func FileExists(path string) bool {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
@@ -63,11 +56,11 @@ func CommandExists(name string) bool {
 // EnsureGoMobileTools checks if gomobile and gobind are installed, and installs them if missing.
 func EnsureGoMobileTools() {
 	if !CommandExists("gomobile") || !CommandExists("gobind") {
-		fmt.Println("Go Mobile build tools missing. Installing...")
+		Info("Go Mobile build tools missing. Installing...")
 		RunCmd("go", "install", "golang.org/x/mobile/cmd/gomobile@latest")
 		RunCmd("go", "install", "golang.org/x/mobile/cmd/gobind@latest")
 
-		fmt.Println("Initializing Go Mobile environment...")
+		Info("Initializing Go Mobile environment...")
 		RunCmd("gomobile", "init")
 	}
 }
@@ -80,6 +73,33 @@ func RunCmd(name string, args ...string) {
 	if err := cmd.Run(); err != nil {
 		Fatal(fmt.Sprintf("Command failed: %s", name), err)
 	}
+}
+
+// ReplaceInFiles recursively searches for a string in all files within a directory and replaces it with another.
+func ReplaceInFiles(root, old, new string, extension string) error {
+	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() || !strings.HasSuffix(path, extension) {
+			return nil
+		}
+
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		content := string(data)
+		if strings.Contains(content, old) {
+			newContent := strings.ReplaceAll(content, old, new)
+			err = os.WriteFile(path, []byte(newContent), info.Mode())
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // BuildFrontend executes the frontend build command defined in the config.ini file.
@@ -95,7 +115,7 @@ func BuildFrontend() {
 		return
 	}
 
-	fmt.Printf("Building frontend with command: %s\n", buildCommand)
+	Info("Building frontend with command: " + buildCommand)
 
 	origWd, _ := os.Getwd()
 	_ = os.Chdir(frontendDir)
@@ -112,7 +132,7 @@ func BuildFrontend() {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: Frontend build failed: %v\n", err)
+		Warn("Frontend build failed: " + err.Error())
 	}
 }
 

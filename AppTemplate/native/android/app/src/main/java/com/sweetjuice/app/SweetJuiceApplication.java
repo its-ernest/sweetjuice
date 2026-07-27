@@ -1,6 +1,7 @@
 package com.sweetjuice.app;
 
 import android.app.Application;
+import android.util.Log;
 import com.sweetjuice.plugin.SweetJuicePlugin;
 import com.sweetjuice.pkg.biometric.BiometricPlugin;
 import com.sweetjuice.pkg.daemon.DaemonPlugin;
@@ -14,16 +15,22 @@ import java.util.HashMap;
 import java.util.Map;
 import sweetjuice.Sweetjuice;
 
-public class SweetJuiceApplication extends Application {
+public class SweetJuiceApplication extends android.app.Application {
     private final Map<String, SweetJuicePlugin> mPlugins = new HashMap<>();
+    private SweetJuiceActivity mActiveActivity;
+
+    public void setActiveActivity(SweetJuiceActivity activity) {
+        mActiveActivity = activity;
+    }
+
+    public SweetJuiceActivity getActiveActivity() {
+        return mActiveActivity;
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
         
-        // Start Go engine
-        Sweetjuice.startApplication();
-
         // Initialize and Register global plugins
         registerPlugin(new PermissionsPlugin());
         registerPlugin(new WorkManagerPlugin());
@@ -38,6 +45,16 @@ public class SweetJuiceApplication extends Application {
         Sweetjuice.setNativeCallHandler(new sweetjuice.NativeCallHandler() {
             @Override
             public String onNativeCall(String method, String args) {
+                Log.d("SweetJuice", "NativeCall: " + method);
+                if ("ui:render".equals(method)) {
+                    if (mActiveActivity != null) {
+                        mActiveActivity.renderUI(args);
+                        return "{\"status\":\"ok\"}";
+                    }
+                    Log.w("SweetJuice", "ui:render dropped: No active activity");
+                    return "{\"error\":\"No active activity\"}";
+                }
+
                 if (method.contains(":")) {
                     String[] parts = method.split(":", 2);
                     String domain = parts[0];
@@ -54,7 +71,6 @@ public class SweetJuiceApplication extends Application {
     }
 
     private void registerPlugin(SweetJuicePlugin plugin) {
-        // Prime the plugin with the Application context for background tasks
         plugin.onAttach(this);
         mPlugins.put(plugin.getDomain(), plugin);
     }

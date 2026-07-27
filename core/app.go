@@ -1,46 +1,25 @@
-// Package sweetjuice provides the core runtime for Sweet Juice applications.
-// It manages the application lifecycle, service binding, and the bridge between
-// Go and the native mobile platform.
+// Package core provides the core runtime for Sweet Juice applications.
 package core
 
 import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"github.com/sweet-juice/sweetjuice/ui"
 )
 
-// Options defines the application configuration following the Sweet Juice v3 pattern.
+// Options defines the application configuration.
 type Options struct {
-	// Name is the name of the application.
-	Name string
-	// Assets is the embedded filesystem containing the frontend assets.
-	Assets embed.FS
-	// Bind is a slice of struct instances to export to the frontend.
-	Bind []interface{}
-	// BindMap is a map of struct instances to export to the frontend, keyed by their names.
-	BindMap map[string]interface{}
-	// OnStart is a callback triggered when the application has initialized.
+	Name    string
+	Assets  embed.FS
 	OnStart func(app *Application) error
-}
-
-// WindowOptions defines initial window configuration.
-type WindowOptions struct {
-	Title string
-}
-
-// Window represents the application window (WebView container).
-type Window struct {
-	Options WindowOptions
 }
 
 type nativeMethod func([]json.RawMessage) (interface{}, error)
 
 // Application represents the global lifecycle state container.
-// It manages the communication between the Go backend and the native mobile environment.
 type Application struct {
 	Name          string
-	Window        *Window
-	methods       map[string]interface{} // Store as generic interfaces to hide reflect types from gobind
 	nativeMethods map[string]nativeMethod
 	Events        *EventBus
 	options       Options
@@ -50,32 +29,21 @@ type Application struct {
 func NewApplication(options Options) *Application {
 	return &Application{
 		Name:          options.Name,
-		Window:        &Window{},
-		methods:       make(map[string]interface{}),
 		nativeMethods: make(map[string]nativeMethod),
 		Events:        NewEventBus(),
 		options:       options,
 	}
 }
 
-// NewWindow configures and returns the application window.
-func (a *Application) NewWindow(opts WindowOptions) *Window {
-	a.Window.Options = opts
-	return a.Window
-}
-
-// Run starts the application engine and initializes bindings.
+// Run starts the application engine.
 func (a *Application) Run() error {
-	fmt.Printf("[%s] Initializing Sweet Juice core engine...\n", a.Name)
-	if err := a.parseBindings(); err != nil {
-		return fmt.Errorf("failed to parse structural bindings: %w", err)
-	}
-
-	if a.nativeMethods == nil {
-		a.nativeMethods = make(map[string]nativeMethod)
-	}
-
 	SetGlobalApp(a)
+
+	// Register UI event dispatcher
+	SetUIEventDispatcher(func(id string, event string, data interface{}) error {
+		ui.DispatchEvent(id, event, data)
+		return nil
+	})
 
 	if a.options.OnStart != nil {
 		return a.options.OnStart(a)
@@ -84,8 +52,7 @@ func (a *Application) Run() error {
 	return nil
 }
 
-// RegisterNativeMethod registers a Go function as a "Native Method" that can be called
-// directly from the Java/Objective-C layer using the HandleNativeAction bridge.
+// RegisterNativeMethod registers a Go function as a "Native Method".
 func (a *Application) RegisterNativeMethod(methodKey string, fn func([]json.RawMessage) (interface{}, error)) {
 	if a.nativeMethods == nil {
 		a.nativeMethods = make(map[string]nativeMethod)
