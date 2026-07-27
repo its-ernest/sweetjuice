@@ -68,9 +68,6 @@ public class SweetJuiceApplication extends android.app.Application {
                 return "{\"error\":\"Plugin domain not found\"}";
             }
         });
-
-        // Start Go engine after handler is ready
-        Sweetjuice.startApplication();
     }
 
     private void registerPlugin(SweetJuicePlugin plugin) {

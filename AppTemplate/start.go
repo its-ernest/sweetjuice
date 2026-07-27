@@ -1,8 +1,11 @@
 package sweetjuice
 
 import (
-	"helloworld/lib/state"
-	"helloworld/lib/views"
+	"fmt"
+	"myapp/lib/state"
+	"myapp/lib/views"
+	"os"
+
 	"github.com/sweet-juice/sweetjuice/app"
 )
 
@@ -24,5 +27,7 @@ func StartApplication() string {
 
 // ReRender allows the native side to trigger a UI refresh when the activity lifecycle changes.
 func ReRender() {
-	app.ReRender()
+	if err := app.ReRender(); err != nil {
+		fmt.Fprintf(os.Stderr, "ReRender error: %v\n", err)
+	}
 }

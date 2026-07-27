@@ -2,7 +2,7 @@ package components
 
 import (
 	"fmt"
-	"helloworld/lib/state"
+	"myapp/lib/state"
 	"github.com/sweet-juice/sweetjuice/ui"
 	"github.com/sweet-juice/sweetjuice/ui/style"
 )
@@ -24,6 +24,8 @@ func UserInput(s *state.UserState) ui.Node {
 		ui.Spacer().Height(24),
 
 		ui.TextField("Your Name").
+			ID("user_name_input").
+			WithValue(s.Name).
 			OnChanged(s.SetName).
 			Style(style.View{
 				BackgroundColor: "#F2F2F7",

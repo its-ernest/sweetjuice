@@ -1,11 +1,14 @@
 package com.sweetjuice.app;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.util.Log;
+import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.sweetjuice.plugin.SweetJuicePlugin;
@@ -14,41 +17,66 @@ import sweetjuice.Sweetjuice;
 public class SweetJuiceActivity extends AppCompatActivity {
 
     private UIManager mUIManager;
+    private LinearLayout rootLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Register this activity as active in application lifecycle
         ((SweetJuiceApplication) getApplication()).setActiveActivity(this);
 
-        // Attach this activity context to all plugins
         SweetJuiceApplication app = (SweetJuiceApplication) getApplication();
         for (SweetJuicePlugin plugin : app.getPlugins().values()) {
             plugin.onAttach(this);
         }
 
-        // Initialize Native UI Container
         ScrollView scrollView = new ScrollView(this);
         scrollView.setFillViewport(true);
-        LinearLayout rootLayout = new LinearLayout(this);
+        scrollView.setBackgroundColor(Color.WHITE);
+
+        rootLayout = new LinearLayout(this);
         rootLayout.setOrientation(LinearLayout.VERTICAL);
+        rootLayout.setBackgroundColor(Color.WHITE);
         scrollView.addView(rootLayout);
-        
         setContentView(scrollView);
 
         mUIManager = new UIManager(this, rootLayout);
 
-        // Force a re-render now that the activity is active and UI is attached
-        Sweetjuice.reRender();
+        showFallback("Starting Sweet Juice...");
 
-        // Handle initial intent for Deep Linking
+        try {
+            Sweetjuice.startApplication();
+            Sweetjuice.reRender();
+        } catch (Throwable t) {
+            Log.e("SweetJuice", "Go bridge failed", t);
+            showFallback("Bridge error: " + t.getMessage());
+            return;
+        }
+
         handleIntent(getIntent());
     }
 
+    void showFallback(String msg) {
+        runOnUiThread(() -> {
+            rootLayout.removeAllViews();
+            TextView tv = new TextView(SweetJuiceActivity.this);
+            tv.setText(msg);
+            tv.setTextSize(18);
+            tv.setTextColor(Color.DKGRAY);
+            tv.setGravity(Gravity.CENTER);
+            rootLayout.addView(tv);
+        });
+    }
+
     public void renderUI(final String json) {
-        Log.d("SweetJuice", "Activity.renderUI called");
-        runOnUiThread(() -> mUIManager.render(json));
+        Log.d("SweetJuice", "Activity.renderUI called, length=" + (json != null ? json.length() : 0));
+        runOnUiThread(() -> {
+            try {
+                mUIManager.render(json);
+            } catch (Exception e) {
+                Log.e("SweetJuice", "UIManager.render crashed", e);
+            }
+        });
     }
 
     @Override
@@ -78,7 +106,7 @@ public class SweetJuiceActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         SweetJuiceApplication app = (SweetJuiceApplication) getApplication();
         for (SweetJuicePlugin plugin : app.getPlugins().values()) {

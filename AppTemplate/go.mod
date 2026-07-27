@@ -1,4 +1,4 @@
-module helloworld
+module myapp
 
 go 1.26.3
 
@@ -14,7 +14,4 @@ require (
 	golang.org/x/tools v0.45.0 // indirect
 )
 
-tool golang.org/x/mobile/cmd/gobind
-
 replace github.com/sweet-juice/sweetjuice => ../
- 

@@ -1,8 +1,8 @@
 package views
 
 import (
-	"helloworld/lib/components"
-	"helloworld/lib/state"
+	"myapp/lib/components"
+	"myapp/lib/state"
 	"github.com/sweet-juice/sweetjuice/ui"
 	"github.com/sweet-juice/sweetjuice/ui/style"
 )

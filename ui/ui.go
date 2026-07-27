@@ -67,7 +67,7 @@ func (n *textNode) OnClick(h func()) *textNode {
 func (n *textNode) Serialize() (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"type":   n.Type,
-		"id":     n.ID,
+		"id":     n.BaseNode.ID,
 		"value":  n.Value,
 		"style":  n.BaseNode.Style,
 		"events": n.Events,
@@ -110,7 +110,7 @@ func (n *buttonNode) OnLongPress(h func()) *buttonNode {
 func (n *buttonNode) Serialize() (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"type":   n.Type,
-		"id":     n.ID,
+		"id":     n.BaseNode.ID,
 		"text":   n.Text,
 		"style":  n.BaseNode.Style,
 		"events": n.Events,
@@ -136,6 +136,11 @@ func (n *textFieldNode) ID(id string) *textFieldNode {
 	return n
 }
 
+func (n *textFieldNode) WithValue(v string) *textFieldNode {
+	n.Value = v
+	return n
+}
+
 func (n *textFieldNode) OnChanged(h func(string)) *textFieldNode {
 	n.register("changed", func(args interface{}) {
 		if s, ok := args.(string); ok {
@@ -154,7 +159,7 @@ func (n *textFieldNode) Style(s style.View) *textFieldNode {
 func (n *textFieldNode) Serialize() (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"type":        n.Type,
-		"id":          n.ID,
+		"id":          n.BaseNode.ID,
 		"placeholder": n.Placeholder,
 		"value":       n.Value,
 		"style":       n.BaseNode.Style,
@@ -204,7 +209,7 @@ func (n *stackNode) Serialize() (map[string]interface{}, error) {
 	}
 	return map[string]interface{}{
 		"type":     n.Type,
-		"id":       n.ID,
+		"id":       n.BaseNode.ID,
 		"children": children,
 		"style":    n.BaseNode.Style,
 		"events":   n.Events,
@@ -266,7 +271,7 @@ func (n *spacerNode) Height(h float64) *spacerNode {
 func (n *spacerNode) Serialize() (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"type":   n.Type,
-		"id":     n.ID,
+		"id":     n.BaseNode.ID,
 		"width":  n.width,
 		"height": n.height,
 	}, nil
@@ -280,7 +285,19 @@ func RegisterEvent(id, event string, handler func(interface{})) {
 }
 
 func DispatchEvent(id, event string, args interface{}) {
-	if h, ok := eventRegistry[fmt.Sprintf("%s:%s", id, event)]; ok {
+	key := fmt.Sprintf("%s:%s", id, event)
+	if h, ok := eventRegistry[key]; ok {
+		fmt.Printf("Go: DispatchEvent hit key=%s\n", key)
 		h(args)
+	} else {
+		fmt.Printf("Go: DispatchEvent MISS key=%s registryKeys=%v\n", key, getRegistryKeys())
 	}
+}
+
+func getRegistryKeys() []string {
+	keys := make([]string, 0, len(eventRegistry))
+	for k := range eventRegistry {
+		keys = append(keys, k)
+	}
+	return keys
 }

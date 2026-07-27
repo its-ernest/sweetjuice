@@ -48,12 +48,15 @@ func NewMobileBridge() *MobileBridge {
 
 // CallGoBackend provides a class-mapped method for the JNI layer to invoke.
 func (b *MobileBridge) CallGoBackend(methodKey string, jsonArgsPayload string) string {
+	fmt.Printf("Go: CallGoBackend method=%s payload=%s\n", methodKey, jsonArgsPayload)
+
 	if globalAppInstance == nil {
 		return `{"error": "Application core runtime context not active"}`
 	}
 
 	if methodKey == "ui:event" {
 		if uiEventDispatcher == nil {
+			fmt.Println("Go: uiEventDispatcher is nil")
 			return `{"error": "UI event dispatcher not set"}`
 		}
 		var payload struct {
@@ -64,6 +67,7 @@ func (b *MobileBridge) CallGoBackend(methodKey string, jsonArgsPayload string) s
 		if err := json.Unmarshal([]byte(jsonArgsPayload), &payload); err != nil {
 			return fmt.Sprintf(`{"error": "Failed to parse UI event payload: %s"}`, err.Error())
 		}
+		fmt.Printf("Go: dispatching ui:event id=%s name=%s data=%v\n", payload.ID, payload.Name, payload.Data)
 		if err := uiEventDispatcher(payload.ID, payload.Name, payload.Data); err != nil {
 			return fmt.Sprintf(`{"error": "%s"}`, err.Error())
 		}
@@ -82,6 +86,7 @@ func (b *MobileBridge) PollNativeEvent() string {
 
 // HandleMessageFromFrontend is a package-level helper exposed to gomobile-generated Java wrappers.
 func HandleMessageFromFrontend(methodKey string, jsonArgsPayload string) string {
+	fmt.Printf("Go: HandleMessageFromFrontend method=%s payload=%s\n", methodKey, jsonArgsPayload)
 	bridge := NewMobileBridge()
 	return bridge.CallGoBackend(methodKey, jsonArgsPayload)
 }
