@@ -1,6 +1,7 @@
 package com.sweetjuice.app;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.text.Editable;
@@ -13,11 +14,18 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import androidx.core.content.ContextCompat;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.sweetjuice.plugin.SweetJuiceWidgetFactory;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import sweetjuice.Sweetjuice;
 
@@ -26,11 +34,20 @@ public class UIManager {
     private final Context context;
     private final ViewGroup rootContainer;
     private boolean renderFailed;
+    private final Map<String, SweetJuiceWidgetFactory> widgetFactories = new HashMap<>();
 
     public UIManager(Context context, ViewGroup rootContainer) {
         this.context = context;
         this.rootContainer = rootContainer;
         this.renderFailed = false;
+    }
+
+    public void registerWidgetFactory(SweetJuiceWidgetFactory factory) {
+        widgetFactories.put(factory.getType(), factory);
+    }
+
+    public void registerWidgetFactory(String type, SweetJuiceWidgetFactory factory) {
+        widgetFactories.put(type, factory);
     }
 
     public void render(String jsonTree) {
@@ -57,6 +74,28 @@ public class UIManager {
             }
 
             renderFailed = false;
+
+            if ("root".equals(type)) {
+                JSONObject childNode = rootNode.optJSONObject("child");
+                if (childNode == null) {
+                    Log.w(TAG, "UIManager: root node missing child");
+                    return;
+                }
+                View existingRoot = rootContainer.getChildAt(0);
+                View newView = updateOrCreateView(existingRoot, childNode);
+
+                if (existingRoot != newView) {
+                    rootContainer.removeAllViews();
+                    rootContainer.addView(newView);
+                }
+
+                applyRootBackground(rootNode);
+                if (!renderFailed) {
+                    Log.d(TAG, "UIManager: render OK");
+                }
+                return;
+            }
+
             View existingRoot = rootContainer.getChildAt(0);
             View newView = updateOrCreateView(existingRoot, rootNode);
 
@@ -75,6 +114,24 @@ public class UIManager {
         }
     }
 
+    private void applyRootBackground(JSONObject rootNode) {
+        try {
+            String bg = rootNode.optString("backgroundColor", "").trim();
+            if (bg.isEmpty()) {
+                JSONObject style = rootNode.optJSONObject("style");
+                if (style != null) {
+                    bg = style.optString("backgroundColor", "").trim();
+                }
+            }
+            if (!bg.isEmpty()) {
+                int color = Color.parseColor(bg);
+                rootContainer.setBackgroundColor(color);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "UIManager: applyRootBackground failed", e);
+        }
+    }
+
     private View updateOrCreateView(View existingView, JSONObject node) {
         try {
             String id = node.optString("id", "");
@@ -83,6 +140,17 @@ public class UIManager {
             if (type.isEmpty()) {
                 Log.w(TAG, "UIManager: node missing type, id=" + id);
                 return existingView != null ? existingView : createView("text");
+            }
+
+            SweetJuiceWidgetFactory widgetFactory = widgetFactories.get(type);
+            if (widgetFactory != null) {
+                View widgetView = existingView;
+                if (widgetView == null || !(widgetView.getTag() != null && widgetView.getTag().equals(id))) {
+                    widgetView = widgetFactory.createView(context, node, rootContainer);
+                    widgetView.setTag(id);
+                }
+                updateView(widgetView, node);
+                return widgetView;
             }
 
             View view = existingView;
@@ -121,17 +189,27 @@ public class UIManager {
         switch (type) {
             case "column":
             case "row":
+            case "button-group":
+            case "segmented-button":
                 return view instanceof LinearLayout && !(view instanceof MaterialCardView);
             case "card":
                 return view instanceof MaterialCardView;
             case "text":
                 return view instanceof TextView && !(view instanceof MaterialButton) && !(view instanceof EditText);
             case "button":
+            case "text-button":
+            case "outlined-button":
+            case "tonal-button":
+            case "elevated-button":
+            case "icon-button":
                 return view instanceof MaterialButton;
             case "textfield":
                 return view instanceof EditText;
             case "spacer":
                 return view.getClass().equals(View.class);
+            case "fab":
+            case "extended-fab":
+                return view instanceof FloatingActionButton || view instanceof ExtendedFloatingActionButton;
             default:
                 return false;
         }
@@ -174,6 +252,54 @@ public class UIManager {
                     btn.setTextColor(Color.WHITE);
                     v = btn;
                     break;
+                case "text-button":
+                    MaterialButton textBtn = new MaterialButton(context);
+                    textBtn.setBackgroundColor(Color.TRANSPARENT);
+                    textBtn.setElevation(0);
+                    textBtn.setStateListAnimator(null);
+                    v = textBtn;
+                    break;
+                case "outlined-button":
+                    MaterialButton outlinedBtn = new MaterialButton(context);
+                    outlinedBtn.setStrokeWidth(1);
+                    outlinedBtn.setStrokeColor(ColorStateList.valueOf(Color.GRAY));
+                    v = outlinedBtn;
+                    break;
+                case "tonal-button":
+                    MaterialButton tonalBtn = new MaterialButton(context);
+                    tonalBtn.setBackgroundColor(Color.parseColor("#DDE1FF"));
+                    v = tonalBtn;
+                    break;
+                case "elevated-button":
+                    MaterialButton elevatedBtn = new MaterialButton(context);
+                    elevatedBtn.setElevation(dpToPx(2));
+                    v = elevatedBtn;
+                    break;
+                case "icon-button":
+                    MaterialButton iconBtn = new MaterialButton(context);
+                    iconBtn.setIcon(ContextCompat.getDrawable(context, android.R.drawable.ic_menu_edit));
+                    iconBtn.setIconGravity(MaterialButton.ICON_GRAVITY_TEXT_START);
+                    v = iconBtn;
+                    break;
+                case "fab":
+                    v = new FloatingActionButton(context);
+                    break;
+                case "extended-fab":
+                    ExtendedFloatingActionButton efab = new ExtendedFloatingActionButton(context);
+                    v = efab;
+                    break;
+                case "segmented-button":
+                    MaterialButtonToggleGroup group = new MaterialButtonToggleGroup(context);
+                    group.setSingleSelection(true);
+                    group.setSelectionRequired(true);
+                    v = group;
+                    break;
+                case "button-group":
+                    LinearLayout btnGroup = new LinearLayout(context);
+                    btnGroup.setOrientation(LinearLayout.HORIZONTAL);
+                    btnGroup.setBackgroundColor(Color.TRANSPARENT);
+                    v = btnGroup;
+                    break;
                 case "textfield":
                     EditText et = new EditText(context);
                     et.setBackgroundColor(Color.LTGRAY);
@@ -212,6 +338,13 @@ public class UIManager {
                 for (int i = 0; i < events.length(); i++) {
                     eventSet.add(events.getString(i));
                 }
+            }
+
+            SweetJuiceWidgetFactory widgetFactory = widgetFactories.get(type);
+            if (widgetFactory != null) {
+                widgetFactory.updateView(view, node);
+                setupEvents(view, node.optString("id", ""), eventSet);
+                return;
             }
 
             if (view instanceof ViewGroup) {
@@ -259,6 +392,11 @@ public class UIManager {
             if (view instanceof MaterialButton) {
                 MaterialButton btn = (MaterialButton) view;
                 btn.setText(node.optString("text", ""));
+            } else if (view instanceof FloatingActionButton) {
+                FloatingActionButton fab = (FloatingActionButton) view;
+                if (view instanceof ExtendedFloatingActionButton) {
+                    ((ExtendedFloatingActionButton) view).setText(node.optString("text", ""));
+                }
             } else if (view instanceof TextView && !(view instanceof EditText)) {
                 TextView tv = (TextView) view;
                 tv.setText(node.optString("value", ""));

@@ -45,3 +45,44 @@ type Button struct {
 	CornerRadius      float64 `json:"cornerRadius,omitempty"`
 	Color             string  `json:"color,omitempty"`
 }
+
+type TextButton struct {
+	Button
+}
+
+type OutlinedButton struct {
+	Button
+	StrokeWidth float64 `json:"strokeWidth,omitempty"`
+	StrokeColor string  `json:"strokeColor,omitempty"`
+}
+
+type TonalButton struct {
+	Button
+}
+
+type ElevatedButton struct {
+	Button
+}
+
+type IconButton struct {
+	Icon    string  `json:"icon,omitempty"`
+	Size    float64 `json:"size,omitempty"`
+	Tonal   bool    `json:"tonal,omitempty"`
+	Outlined bool   `json:"outlined,omitempty"`
+}
+
+type FabStyle struct {
+	Extended bool   `json:"extended,omitempty"`
+	Text     string `json:"text,omitempty"`
+	Size     string `json:"size,omitempty"` // small, normal, large
+}
+
+type SegmentedButton struct {
+	Options          []string `json:"options,omitempty"`
+	Selected         string   `json:"selected,omitempty"`
+	SingleSelection  bool     `json:"singleSelection,omitempty"`
+}
+
+type ButtonGroup struct {
+	Orientation string `json:"orientation,omitempty"` // horizontal, vertical
+}

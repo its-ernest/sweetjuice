@@ -37,34 +37,34 @@ func (b *BaseNode) register(event string, handler func(interface{})) {
 }
 
 // Text Node
-type textNode struct {
+type TextNode struct {
 	BaseNode
 	Value string
 }
 
-func Text(value string) *textNode {
-	return &textNode{
+func Text(value string) *TextNode {
+	return &TextNode{
 		BaseNode: BaseNode{Type: "text", ID: genID()},
 		Value:    value,
 	}
 }
 
-func (n *textNode) ID(id string) *textNode {
+func (n *TextNode) ID(id string) *TextNode {
 	n.BaseNode.SetID(id)
 	return n
 }
 
-func (n *textNode) Style(s style.Text) *textNode {
+func (n *TextNode) Style(s style.Text) *TextNode {
 	n.BaseNode.Style = s
 	return n
 }
 
-func (n *textNode) OnClick(h func()) *textNode {
+func (n *TextNode) OnClick(h func()) *TextNode {
 	n.register("click", func(interface{}) { h() })
 	return n
 }
 
-func (n *textNode) Serialize() (map[string]interface{}, error) {
+func (n *TextNode) Serialize() (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"type":   n.Type,
 		"id":     n.BaseNode.ID,
@@ -75,39 +75,39 @@ func (n *textNode) Serialize() (map[string]interface{}, error) {
 }
 
 // Button Node
-type buttonNode struct {
+type ButtonNode struct {
 	BaseNode
 	Text string
 }
 
-func Button(text string) *buttonNode {
-	return &buttonNode{
+func Button(text string) *ButtonNode {
+	return &ButtonNode{
 		BaseNode: BaseNode{Type: "button", ID: genID()},
 		Text:     text,
 	}
 }
 
-func (n *buttonNode) ID(id string) *buttonNode {
+func (n *ButtonNode) ID(id string) *ButtonNode {
 	n.BaseNode.SetID(id)
 	return n
 }
 
-func (n *buttonNode) Style(s style.Button) *buttonNode {
+func (n *ButtonNode) Style(s style.Button) *ButtonNode {
 	n.BaseNode.Style = s
 	return n
 }
 
-func (n *buttonNode) OnClick(h func()) *buttonNode {
+func (n *ButtonNode) OnClick(h func()) *ButtonNode {
 	n.register("click", func(interface{}) { h() })
 	return n
 }
 
-func (n *buttonNode) OnLongPress(h func()) *buttonNode {
+func (n *ButtonNode) OnLongPress(h func()) *ButtonNode {
 	n.register("long_press", func(interface{}) { h() })
 	return n
 }
 
-func (n *buttonNode) Serialize() (map[string]interface{}, error) {
+func (n *ButtonNode) Serialize() (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"type":   n.Type,
 		"id":     n.BaseNode.ID,
@@ -118,30 +118,30 @@ func (n *buttonNode) Serialize() (map[string]interface{}, error) {
 }
 
 // TextField Node
-type textFieldNode struct {
+type TextFieldNode struct {
 	BaseNode
 	Placeholder string
 	Value       string
 }
 
-func TextField(placeholder string) *textFieldNode {
-	return &textFieldNode{
+func TextField(placeholder string) *TextFieldNode {
+	return &TextFieldNode{
 		BaseNode:    BaseNode{Type: "textfield", ID: genID()},
 		Placeholder: placeholder,
 	}
 }
 
-func (n *textFieldNode) ID(id string) *textFieldNode {
+func (n *TextFieldNode) ID(id string) *TextFieldNode {
 	n.BaseNode.SetID(id)
 	return n
 }
 
-func (n *textFieldNode) WithValue(v string) *textFieldNode {
+func (n *TextFieldNode) WithValue(v string) *TextFieldNode {
 	n.Value = v
 	return n
 }
 
-func (n *textFieldNode) OnChanged(h func(string)) *textFieldNode {
+func (n *TextFieldNode) OnChanged(h func(string)) *TextFieldNode {
 	n.register("changed", func(args interface{}) {
 		if s, ok := args.(string); ok {
 			n.Value = s
@@ -151,12 +151,12 @@ func (n *textFieldNode) OnChanged(h func(string)) *textFieldNode {
 	return n
 }
 
-func (n *textFieldNode) Style(s style.View) *textFieldNode {
+func (n *TextFieldNode) Style(s style.View) *TextFieldNode {
 	n.BaseNode.Style = s
 	return n
 }
 
-func (n *textFieldNode) Serialize() (map[string]interface{}, error) {
+func (n *TextFieldNode) Serialize() (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"type":        n.Type,
 		"id":          n.BaseNode.ID,
@@ -168,41 +168,41 @@ func (n *textFieldNode) Serialize() (map[string]interface{}, error) {
 }
 
 // Stack Node (VStack, HStack)
-type stackNode struct {
+type StackNode struct {
 	BaseNode
 	Children []Node
 }
 
-func VStack(children ...Node) *stackNode {
-	return &stackNode{
+func VStack(children ...Node) *StackNode {
+	return &StackNode{
 		BaseNode: BaseNode{Type: "column", ID: genID()},
 		Children: children,
 	}
 }
 
-func HStack(children ...Node) *stackNode {
-	return &stackNode{
+func HStack(children ...Node) *StackNode {
+	return &StackNode{
 		BaseNode: BaseNode{Type: "row", ID: genID()},
 		Children: children,
 	}
 }
 
-func (n *stackNode) ID(id string) *stackNode {
+func (n *StackNode) ID(id string) *StackNode {
 	n.BaseNode.SetID(id)
 	return n
 }
 
-func (n *stackNode) Style(s style.View) *stackNode {
+func (n *StackNode) Style(s style.View) *StackNode {
 	n.BaseNode.Style = s
 	return n
 }
 
-func (n *stackNode) OnClick(h func()) *stackNode {
+func (n *StackNode) OnClick(h func()) *StackNode {
 	n.register("click", func(interface{}) { h() })
 	return n
 }
 
-func (n *stackNode) Serialize() (map[string]interface{}, error) {
+func (n *StackNode) Serialize() (map[string]interface{}, error) {
 	children := make([]map[string]interface{}, len(n.Children))
 	for i, c := range n.Children {
 		children[i], _ = c.Serialize()
@@ -217,63 +217,451 @@ func (n *stackNode) Serialize() (map[string]interface{}, error) {
 }
 
 // Card Node
-type cardNode struct {
-	stackNode
+type CardNode struct {
+	StackNode
 }
 
-func Card(children ...Node) *cardNode {
-	return &cardNode{
-		stackNode: stackNode{
+func Card(children ...Node) *CardNode {
+	return &CardNode{
+		StackNode: StackNode{
 			BaseNode: BaseNode{Type: "card", ID: genID()},
 			Children: children,
 		},
 	}
 }
 
-func (n *cardNode) ID(id string) *cardNode {
+func (n *CardNode) ID(id string) *CardNode {
 	n.BaseNode.SetID(id)
 	return n
 }
 
-func (n *cardNode) Style(s style.View) *cardNode {
+func (n *CardNode) Style(s style.View) *CardNode {
 	n.BaseNode.Style = s
 	return n
 }
 
 // Spacer Node
-type spacerNode struct {
+type SpacerNode struct {
 	BaseNode
 	width  float64
 	height float64
 }
 
-func Spacer() *spacerNode {
-	return &spacerNode{
+func Spacer() *SpacerNode {
+	return &SpacerNode{
 		BaseNode: BaseNode{Type: "spacer", ID: genID()},
 	}
 }
 
-func (n *spacerNode) ID(id string) *spacerNode {
+func (n *SpacerNode) ID(id string) *SpacerNode {
 	n.BaseNode.SetID(id)
 	return n
 }
 
-func (n *spacerNode) Width(w float64) *spacerNode {
+func (n *SpacerNode) Width(w float64) *SpacerNode {
 	n.width = w
 	return n
 }
 
-func (n *spacerNode) Height(h float64) *spacerNode {
+func (n *SpacerNode) Height(h float64) *SpacerNode {
 	n.height = h
 	return n
 }
 
-func (n *spacerNode) Serialize() (map[string]interface{}, error) {
+func (n *SpacerNode) Serialize() (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"type":   n.Type,
 		"id":     n.BaseNode.ID,
 		"width":  n.width,
 		"height": n.height,
+	}, nil
+}
+
+// Root Node — wraps the entire app tree and carries root-level metadata like background color.
+type RootNode struct {
+	BaseNode
+	Child           Node
+	BackgroundColor string
+}
+
+func Root(child Node, backgroundColor string) *RootNode {
+	return &RootNode{
+		BaseNode:        BaseNode{Type: "root", ID: genID()},
+		Child:           child,
+		BackgroundColor: backgroundColor,
+	}
+}
+
+func (n *RootNode) Serialize() (map[string]interface{}, error) {
+	childMap, err := n.Child.Serialize()
+	if err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"type":             n.Type,
+		"id":               n.BaseNode.ID,
+		"child":            childMap,
+		"events":           n.Events,
+		"style":            n.BaseNode.Style,
+		"backgroundColor":  n.BackgroundColor,
+	}, nil
+}
+
+// Widget Node (for third-party widget plugins)
+type WidgetNode struct {
+	BaseNode
+	Props map[string]interface{}
+}
+
+func Widget(widgetType string, props map[string]interface{}) *WidgetNode {
+	if props == nil {
+		props = make(map[string]interface{})
+	}
+	return &WidgetNode{
+		BaseNode: BaseNode{Type: widgetType, ID: genID()},
+		Props:    props,
+	}
+}
+
+func (n *WidgetNode) ID(id string) *WidgetNode {
+	n.BaseNode.SetID(id)
+	return n
+}
+
+func (n *WidgetNode) Prop(key string, value interface{}) *WidgetNode {
+	n.Props[key] = value
+	return n
+}
+
+func (n *WidgetNode) OnClick(h func()) *WidgetNode {
+	n.register("click", func(interface{}) { h() })
+	return n
+}
+
+func (n *WidgetNode) OnChanged(h func(string)) *WidgetNode {
+	n.register("changed", func(args interface{}) {
+		if s, ok := args.(string); ok {
+			h(s)
+		}
+	})
+	return n
+}
+
+func (n *WidgetNode) Serialize() (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"type":   n.Type,
+		"id":     n.BaseNode.ID,
+		"props":  n.Props,
+		"events": n.Events,
+	}, nil
+}
+
+func TextButton(text string) *TextButtonNode {
+	return &TextButtonNode{
+		BaseNode: BaseNode{Type: "text-button", ID: genID()},
+		Text:     text,
+	}
+}
+
+type TextButtonNode struct {
+	BaseNode
+	Text string
+}
+
+func (n *TextButtonNode) ID(id string) *TextButtonNode {
+	n.BaseNode.SetID(id)
+	return n
+}
+
+func (n *TextButtonNode) Style(s style.TextButton) *TextButtonNode {
+	n.BaseNode.Style = s
+	return n
+}
+
+func (n *TextButtonNode) OnClick(h func()) *TextButtonNode {
+	n.register("click", func(interface{}) { h() })
+	return n
+}
+
+func (n *TextButtonNode) Serialize() (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"type":   n.Type,
+		"id":     n.BaseNode.ID,
+		"text":   n.Text,
+		"style":  n.BaseNode.Style,
+		"events": n.Events,
+	}, nil
+}
+
+func OutlinedButton(text string) *OutlinedButtonNode {
+	return &OutlinedButtonNode{
+		BaseNode: BaseNode{Type: "outlined-button", ID: genID()},
+		Text:     text,
+	}
+}
+
+type OutlinedButtonNode struct {
+	BaseNode
+	Text string
+}
+
+func (n *OutlinedButtonNode) ID(id string) *OutlinedButtonNode {
+	n.BaseNode.SetID(id)
+	return n
+}
+
+func (n *OutlinedButtonNode) Style(s style.OutlinedButton) *OutlinedButtonNode {
+	n.BaseNode.Style = s
+	return n
+}
+
+func (n *OutlinedButtonNode) OnClick(h func()) *OutlinedButtonNode {
+	n.register("click", func(interface{}) { h() })
+	return n
+}
+
+func (n *OutlinedButtonNode) Serialize() (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"type":   n.Type,
+		"id":     n.BaseNode.ID,
+		"text":   n.Text,
+		"style":  n.BaseNode.Style,
+		"events": n.Events,
+	}, nil
+}
+
+func TonalButton(text string) *TonalButtonNode {
+	return &TonalButtonNode{
+		BaseNode: BaseNode{Type: "tonal-button", ID: genID()},
+		Text:     text,
+	}
+}
+
+type TonalButtonNode struct {
+	BaseNode
+	Text string
+}
+
+func (n *TonalButtonNode) ID(id string) *TonalButtonNode {
+	n.BaseNode.SetID(id)
+	return n
+}
+
+func (n *TonalButtonNode) Style(s style.TonalButton) *TonalButtonNode {
+	n.BaseNode.Style = s
+	return n
+}
+
+func (n *TonalButtonNode) OnClick(h func()) *TonalButtonNode {
+	n.register("click", func(interface{}) { h() })
+	return n
+}
+
+func (n *TonalButtonNode) Serialize() (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"type":   n.Type,
+		"id":     n.BaseNode.ID,
+		"text":   n.Text,
+		"style":  n.BaseNode.Style,
+		"events": n.Events,
+	}, nil
+}
+
+func ElevatedButton(text string) *ElevatedButtonNode {
+	return &ElevatedButtonNode{
+		BaseNode: BaseNode{Type: "elevated-button", ID: genID()},
+		Text:     text,
+	}
+}
+
+type ElevatedButtonNode struct {
+	BaseNode
+	Text string
+}
+
+func (n *ElevatedButtonNode) ID(id string) *ElevatedButtonNode {
+	n.BaseNode.SetID(id)
+	return n
+}
+
+func (n *ElevatedButtonNode) Style(s style.ElevatedButton) *ElevatedButtonNode {
+	n.BaseNode.Style = s
+	return n
+}
+
+func (n *ElevatedButtonNode) OnClick(h func()) *ElevatedButtonNode {
+	n.register("click", func(interface{}) { h() })
+	return n
+}
+
+func (n *ElevatedButtonNode) Serialize() (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"type":   n.Type,
+		"id":     n.BaseNode.ID,
+		"text":   n.Text,
+		"style":  n.BaseNode.Style,
+		"events": n.Events,
+	}, nil
+}
+
+func IconButton(name string) *IconButtonNode {
+	return &IconButtonNode{
+		BaseNode: BaseNode{Type: "icon-button", ID: genID()},
+		Name:     name,
+	}
+}
+
+type IconButtonNode struct {
+	BaseNode
+	Name string
+}
+
+func (n *IconButtonNode) ID(id string) *IconButtonNode {
+	n.BaseNode.SetID(id)
+	return n
+}
+
+func (n *IconButtonNode) Style(s style.IconButton) *IconButtonNode {
+	n.BaseNode.Style = s
+	return n
+}
+
+func (n *IconButtonNode) OnClick(h func()) *IconButtonNode {
+	n.register("click", func(interface{}) { h() })
+	return n
+}
+
+func (n *IconButtonNode) Serialize() (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"type":   n.Type,
+		"id":     n.BaseNode.ID,
+		"name":   n.Name,
+		"style":  n.BaseNode.Style,
+		"events": n.Events,
+	}, nil
+}
+
+func FAB() *FabNode {
+	return &FabNode{
+		BaseNode: BaseNode{Type: "fab", ID: genID()},
+	}
+}
+
+func ExtendedFAB(text string) *FabNode {
+	return &FabNode{
+		BaseNode: BaseNode{Type: "extended-fab", ID: genID()},
+		Text:     text,
+	}
+}
+
+type FabNode struct {
+	BaseNode
+	Text string
+}
+
+func (n *FabNode) ID(id string) *FabNode {
+	n.BaseNode.SetID(id)
+	return n
+}
+
+func (n *FabNode) Style(s style.FabStyle) *FabNode {
+	n.BaseNode.Style = s
+	return n
+}
+
+func (n *FabNode) OnClick(h func()) *FabNode {
+	n.register("click", func(interface{}) { h() })
+	return n
+}
+
+func (n *FabNode) Serialize() (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"type":   n.Type,
+		"id":     n.BaseNode.ID,
+		"text":   n.Text,
+		"style":  n.BaseNode.Style,
+		"events": n.Events,
+	}, nil
+}
+
+func SegmentedButton(options []string, selected string) *SegmentedButtonNode {
+	return &SegmentedButtonNode{
+		BaseNode: BaseNode{Type: "segmented-button", ID: genID()},
+		Options:  options,
+		Selected: selected,
+	}
+}
+
+type SegmentedButtonNode struct {
+	BaseNode
+	Options  []string
+	Selected string
+}
+
+func (n *SegmentedButtonNode) ID(id string) *SegmentedButtonNode {
+	n.BaseNode.SetID(id)
+	return n
+}
+
+func (n *SegmentedButtonNode) Style(s style.SegmentedButton) *SegmentedButtonNode {
+	n.BaseNode.Style = s
+	return n
+}
+
+func (n *SegmentedButtonNode) OnChanged(h func(string)) *SegmentedButtonNode {
+	n.register("changed", func(args interface{}) {
+		if s, ok := args.(string); ok {
+			n.Selected = s
+			h(s)
+		}
+	})
+	return n
+}
+
+func (n *SegmentedButtonNode) Serialize() (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"type":       n.Type,
+		"id":         n.BaseNode.ID,
+		"options":    n.Options,
+		"selected":   n.Selected,
+		"style":      n.BaseNode.Style,
+		"events":     n.Events,
+	}, nil
+}
+
+func ButtonGroup(children ...Node) *ButtonGroupNode {
+	return &ButtonGroupNode{
+		BaseNode: BaseNode{Type: "button-group", ID: genID()},
+		Children: children,
+	}
+}
+
+type ButtonGroupNode struct {
+	BaseNode
+	Children []Node
+}
+
+func (n *ButtonGroupNode) ID(id string) *ButtonGroupNode {
+	n.BaseNode.SetID(id)
+	return n
+}
+
+func (n *ButtonGroupNode) Style(s style.ButtonGroup) *ButtonGroupNode {
+	n.BaseNode.Style = s
+	return n
+}
+
+func (n *ButtonGroupNode) Serialize() (map[string]interface{}, error) {
+	children := make([]map[string]interface{}, len(n.Children))
+	for i, c := range n.Children {
+		children[i], _ = c.Serialize()
+	}
+	return map[string]interface{}{
+		"type":     n.Type,
+		"id":       n.BaseNode.ID,
+		"children": children,
+		"style":    n.BaseNode.Style,
+		"events":   n.Events,
 	}, nil
 }
 

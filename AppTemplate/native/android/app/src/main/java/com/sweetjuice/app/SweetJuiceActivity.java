@@ -12,6 +12,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.sweetjuice.plugin.SweetJuicePlugin;
+import com.sweetjuice.plugin.SweetJuiceWidgetFactory;
 import sweetjuice.Sweetjuice;
 
 public class SweetJuiceActivity extends AppCompatActivity {
@@ -32,21 +33,30 @@ public class SweetJuiceActivity extends AppCompatActivity {
 
         ScrollView scrollView = new ScrollView(this);
         scrollView.setFillViewport(true);
-        scrollView.setBackgroundColor(Color.WHITE);
+        scrollView.setBackgroundColor(Color.TRANSPARENT);
 
         rootLayout = new LinearLayout(this);
         rootLayout.setOrientation(LinearLayout.VERTICAL);
-        rootLayout.setBackgroundColor(Color.WHITE);
+        rootLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
         scrollView.addView(rootLayout);
         setContentView(scrollView);
 
         mUIManager = new UIManager(this, rootLayout);
 
+        for (SweetJuicePlugin plugin : app.getPlugins().values()) {
+            for (SweetJuiceWidgetFactory factory : plugin.getWidgetFactories()) {
+                mUIManager.registerWidgetFactory(factory);
+            }
+            plugin.onWidgetFactoriesRegistered(mUIManager);
+        }
+
         showFallback("Starting Sweet Juice...");
 
         try {
             Sweetjuice.startApplication();
-            Sweetjuice.reRender();
         } catch (Throwable t) {
             Log.e("SweetJuice", "Go bridge failed", t);
             showFallback("Bridge error: " + t.getMessage());

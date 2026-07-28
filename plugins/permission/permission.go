@@ -20,18 +20,11 @@ func NewPlugin() *PermissionPlugin {
 	return &PermissionPlugin{}
 }
 
-// Name returns the plugin name "permissions".
-func (p *PermissionPlugin) Name() string {
-	return "permissions"
-}
-
 // Init initializes the plugin with the Sweet Juice application context and registers
 // the "permissions:result" native callback handler.
 func (p *PermissionPlugin) Init(app *core.Application) error {
 	p.app = app
 
-	// Register a handler for the "permissions:result" message coming from Android.
-	// This is for Java calling Go.
 	app.RegisterNativeMethod("permissions:result", func(args []json.RawMessage) (interface{}, error) {
 		if len(args) == 0 {
 			return nil, fmt.Errorf("no arguments provided")
@@ -42,7 +35,6 @@ func (p *PermissionPlugin) Init(app *core.Application) error {
 			return nil, err
 		}
 
-		// Emit the result as a Sweet Juice event to the frontend.
 		app.Events.Emit("permissions:changed", result)
 		return map[string]string{"status": "processed"}, nil
 	})
@@ -51,16 +43,11 @@ func (p *PermissionPlugin) Init(app *core.Application) error {
 }
 
 // Check queries the status of a specific permission synchronously.
-// Example permission: "android.permission.CAMERA"
 func (p *PermissionPlugin) Check(permission string) (string, error) {
 	payload, _ := json.Marshal(map[string]string{
 		"permission": permission,
 	})
-
-	// Use CallNativePlatform to call into the Android Java bridge.
-	// This is Go calling Java.
 	result := core.CallNativePlatform("permissions:check", string(payload))
-	// convert result into a string status rather than "{status: granted}"
 	var resultMap map[string]interface{}
 	json.Unmarshal([]byte(result), &resultMap)
 	if status, ok := resultMap["status"].(string); ok {
@@ -70,14 +57,20 @@ func (p *PermissionPlugin) Check(permission string) (string, error) {
 }
 
 // Request triggers a native permission request dialog on Android.
-// The result will be delivered asynchronously via the "permissions:changed" event.
 func (p *PermissionPlugin) Request(permission string) (string, error) {
 	payload, _ := json.Marshal(map[string]string{
 		"permission": permission,
 	})
-
-	// Use CallNativePlatform to call into the Android Java bridge.
-	// This is Go calling Java.
 	result := core.CallNativePlatform("permissions:request", string(payload))
 	return result, nil
+}
+
+// Check queries the status of a specific permission synchronously.
+func Check(permission string) (string, error) {
+	return NewPlugin().Check(permission)
+}
+
+// Request triggers a native permission request dialog on Android.
+func Request(permission string) (string, error) {
+	return NewPlugin().Request(permission)
 }

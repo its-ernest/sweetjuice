@@ -2,6 +2,9 @@ package com.sweetjuice.plugin;
 
 import android.content.Context;
 import android.content.Intent;
+import android.view.View;
+import com.sweetjuice.app.UIManager;
+import com.sweetjuice.plugin.SweetJuiceWidgetFactory;
 
 /**
  * SweetJuicePlugin is the base interface for all native Android extensions.
@@ -24,6 +27,20 @@ public interface SweetJuicePlugin {
      */
     String handleAction(String action, String jsonArgsPayload);
     
+    /**
+     * Optional: Return widget factories provided by this plugin.
+     * The framework will register them with UIManager during startup.
+     */
+    default SweetJuiceWidgetFactory[] getWidgetFactories() {
+        return new SweetJuiceWidgetFactory[0];
+    }
+
+    /**
+     * Optional: Called after UIManager is ready, allowing plugins to register
+     * dynamic widget factories or inject UI behaviors at runtime.
+     */
+    default void onWidgetFactoriesRegistered(UIManager manager) {}
+
     /**
      * Optional: Called when an activity returns a result.
      */

@@ -40,6 +40,7 @@ public class SweetJuiceApplication extends android.app.Application {
         registerPlugin(new BiometricPlugin());
         registerPlugin(new FilePickerPlugin());
         registerPlugin(new DaemonPlugin());
+        registerPlugin(new com.sweetjuice.pkg.mu3.Mu3Plugin());
 
         // Register the global handler for Go-to-Native calls
         Sweetjuice.setNativeCallHandler(new sweetjuice.NativeCallHandler() {
