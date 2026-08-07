@@ -3,17 +3,12 @@ package com.sweetjuice.app;
 import android.app.Application;
 import android.util.Log;
 import com.sweetjuice.plugin.SweetJuicePlugin;
-import com.sweetjuice.pkg.biometric.BiometricPlugin;
-import com.sweetjuice.pkg.daemon.DaemonPlugin;
-import com.sweetjuice.pkg.devicestate.DeviceStatePlugin;
-import com.sweetjuice.pkg.filepicker.FilePickerPlugin;
-import com.sweetjuice.pkg.logger.LoggerPlugin;
-import com.sweetjuice.pkg.notifications.NotificationPlugin;
-import com.sweetjuice.pkg.permissions.PermissionsPlugin;
-import com.sweetjuice.pkg.workmanager.WorkManagerPlugin;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
-import sweetjuice.Sweetjuice;
+import juiceapp.Juiceapp;
 
 public class SweetJuiceApplication extends android.app.Application {
     private final Map<String, SweetJuicePlugin> mPlugins = new HashMap<>();
@@ -30,20 +25,8 @@ public class SweetJuiceApplication extends android.app.Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        
-        // Initialize and Register global plugins
-        registerPlugin(new PermissionsPlugin());
-        registerPlugin(new WorkManagerPlugin());
-        registerPlugin(new NotificationPlugin());
-        registerPlugin(new LoggerPlugin());
-        registerPlugin(new DeviceStatePlugin());
-        registerPlugin(new BiometricPlugin());
-        registerPlugin(new FilePickerPlugin());
-        registerPlugin(new DaemonPlugin());
-        registerPlugin(new com.sweetjuice.pkg.mu3.Mu3Plugin());
 
-        // Register the global handler for Go-to-Native calls
-        Sweetjuice.setNativeCallHandler(new sweetjuice.NativeCallHandler() {
+        Juiceapp.setNativeCallHandler(new juiceapp.NativeCallHandler() {
             @Override
             public String onNativeCall(String method, String args) {
                 Log.d("SweetJuice", "NativeCall: " + method);
@@ -56,11 +39,14 @@ public class SweetJuiceApplication extends android.app.Application {
                     return "{\"error\":\"No active activity\"}";
                 }
 
+                if ("plugin:register".equals(method)) {
+                    return handlePluginRegister(args);
+                }
+
                 if (method.contains(":")) {
                     String[] parts = method.split(":", 2);
                     String domain = parts[0];
                     String action = parts[1];
-
                     SweetJuicePlugin plugin = mPlugins.get(domain);
                     if (plugin != null) {
                         return plugin.handleAction(action, args);
@@ -69,6 +55,42 @@ public class SweetJuiceApplication extends android.app.Application {
                 return "{\"error\":\"Plugin domain not found\"}";
             }
         });
+    }
+
+    String handlePluginRegister(String args) {
+        try {
+            JSONArray plugins = new JSONArray(args);
+            for (int i = 0; i < plugins.length(); i++) {
+                JSONObject config = plugins.optJSONObject(i);
+                if (config == null) continue;
+                String domain = config.optString("domain", "");
+                String javaPkg = config.optString("javaPkg", "");
+                String className = config.optString("class", "");
+                if (domain.isEmpty() || javaPkg.isEmpty() || className.isEmpty()) continue;
+
+                if (mPlugins.containsKey(domain)) {
+                    Log.d("SweetJuice", "Plugin already registered: " + domain);
+                    continue;
+                }
+
+                try {
+                    String fullClassName = javaPkg + "." + className;
+                    Class<?> clazz = Class.forName(fullClassName);
+                    SweetJuicePlugin plugin = (SweetJuicePlugin) clazz.getDeclaredConstructor().newInstance();
+                    plugin.onAttach(this);
+                    mPlugins.put(domain, plugin);
+                    Log.d("SweetJuice", "Dynamically registered plugin: " + domain + " -> " + fullClassName);
+                } catch (Exception e) {
+                    Log.e("SweetJuice", "Failed to register plugin: " + domain, e);
+                }
+            }
+            JSONObject result = new JSONObject();
+            result.put("status", "ok");
+            result.put("count", mPlugins.size());
+            return result.toString();
+        } catch (JSONException e) {
+            return "{\"error\":\"" + e.getMessage() + "\"}";
+        }
     }
 
     private void registerPlugin(SweetJuicePlugin plugin) {

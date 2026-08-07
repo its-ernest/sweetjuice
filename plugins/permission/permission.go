@@ -30,12 +30,14 @@ func (p *PermissionPlugin) Init(app *core.Application) error {
 			return nil, fmt.Errorf("no arguments provided")
 		}
 
-		var result map[string]interface{}
-		if err := json.Unmarshal(args[0], &result); err != nil {
+		var results []map[string]interface{}
+		if err := json.Unmarshal(args[0], &results); err != nil {
 			return nil, err
 		}
 
-		app.Events.Emit("permissions:changed", result)
+		for _, result := range results {
+			app.Events.Emit("permissions:changed", result)
+		}
 		return map[string]string{"status": "processed"}, nil
 	})
 
@@ -65,6 +67,16 @@ func (p *PermissionPlugin) Request(permission string) (string, error) {
 	return result, nil
 }
 
+// RequestMultiple triggers native permission request dialogs on Android for multiple permissions.
+// The native side requests them sequentially and reports individual results via permissions:changed.
+func (p *PermissionPlugin) RequestMultiple(permissions []string) (string, error) {
+	payload, _ := json.Marshal(map[string][]string{
+		"permissions": permissions,
+	})
+	result := core.CallNativePlatform("permissions:requestMultiple", string(payload))
+	return result, nil
+}
+
 // Check queries the status of a specific permission synchronously.
 func Check(permission string) (string, error) {
 	return NewPlugin().Check(permission)
@@ -73,4 +85,9 @@ func Check(permission string) (string, error) {
 // Request triggers a native permission request dialog on Android.
 func Request(permission string) (string, error) {
 	return NewPlugin().Request(permission)
+}
+
+// RequestMultiple triggers native permission request dialogs on Android for multiple permissions.
+func RequestMultiple(permissions []string) (string, error) {
+	return NewPlugin().RequestMultiple(permissions)
 }

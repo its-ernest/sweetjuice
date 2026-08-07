@@ -6,7 +6,7 @@ bin/
 *.out
 #*.jar
 *.aar
-**/native/ios/SweetJuice.xcframework/
+/AppTemplate/native/ios/SweetJuice.xcframework/
 *.so
 /vendor/
 /dist/
@@ -40,38 +40,23 @@ bin/
 /TODOs.md
 
 # Generated Android library outputs
-**/native/android/*.iml
-**/native/android/.gradle
-**/native/android/local.properties
-**/native/android/.idea/
-**/native/android/.idea/caches
-**/native/android/.idea/libraries
-**/native/android/.idea/modules.xml
-**/native/android/.idea/workspace.xml
-**/native/android/.idea/navEditor.xml
-**/native/android/.idea/assetWizardSettings.xml
-**/native/android/.DS_Store
-**/native/android/build
-**/native/android/captures
-**/native/android/.externalNativeBuild
-**/native/android/.cxx
-**/native/android/local.properties
-#**/native/android/gradle
-**/native/android/app/src/main/java/com/wailspackage
-
-# Frontend build artifacts
-# Logs
-/frontend/logs
-/frontend/*.log
-/frontend/npm-debug.log*
-/frontend/yarn-debug.log*
-/frontend/yarn-error.log*
-/frontend/pnpm-debug.log*
-/frontend/lerna-debug.log*
-/frontend/node_modules
-#/frontend/dist
-/frontend/dist-ssr
-/frontend/*.local
+/AppTemplate/native/android/*.iml
+/AppTemplate/native/android/.gradle
+/AppTemplate/native/android/local.properties
+/AppTemplate/native/android/.idea/
+/AppTemplate/native/android/.idea/caches
+/AppTemplate/native/android/.idea/libraries
+/AppTemplate/native/android/.idea/modules.xml
+/AppTemplate/native/android/.idea/workspace.xml
+/AppTemplate/native/android/.idea/navEditor.xml
+/AppTemplate/native/android/.idea/assetWizardSettings.xml
+/AppTemplate/native/android/.DS_Store
+/AppTemplate/native/android/build
+/AppTemplate/native/android/captures
+/AppTemplate/native/android/.externalNativeBuild
+/AppTemplate/native/android/.cxx
+/AppTemplate/native/android/local.properties
+#/AppTemplate/native/android/gradle
 
 # Temporary files
 temps/

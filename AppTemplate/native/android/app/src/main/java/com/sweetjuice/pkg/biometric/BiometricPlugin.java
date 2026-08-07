@@ -18,7 +18,7 @@ import org.json.JSONObject;
 
 import java.util.concurrent.Executor;
 
-import sweetjuice.Sweetjuice;
+import juiceapp.Juiceapp;
 
 /**
  * BiometricPlugin provides access to biometric authentication (Fingerprint, Face, etc.)
@@ -164,7 +164,7 @@ public class BiometricPlugin implements SweetJuicePlugin {
                 result.put("error_code", errorCode);
             }
             String payload = "[" + result.toString() + "]";
-            Sweetjuice.handleNativeAction("biometric:result", payload);
+            Juiceapp.handleNativeAction("biometric:result", payload);
         } catch (JSONException e) {
             Log.e(TAG, "Failed to send biometric result", e);
         }

@@ -31,6 +31,25 @@ func Run(c ui.Component) {
 	}
 }
 
+func GetEventBus() *core.EventBus {
+	app := core.GetGlobalApp()
+	if app == nil {
+		return nil
+	}
+	return app.Events
+}
+
+func EmitEvent(name string, data interface{}) {
+	bus := GetEventBus()
+	if bus != nil {
+		bus.Emit(name, data)
+	}
+}
+
+func GetGlobalApp() *core.Application {
+	return core.GetGlobalApp()
+}
+
 func sanitizePayload(v interface{}) interface{} {
 	if v == nil {
 		return nil

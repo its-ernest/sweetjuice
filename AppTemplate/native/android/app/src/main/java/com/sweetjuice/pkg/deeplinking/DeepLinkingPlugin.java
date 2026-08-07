@@ -7,7 +7,7 @@ import android.util.Log;
 
 import com.sweetjuice.plugin.SweetJuicePlugin;
 
-import sweetjuice.Sweetjuice;
+import juiceapp.Juiceapp;
 
 /**
  * DeepLinkingPlugin handles incoming deep links and forwards them to the Go layer.
@@ -56,7 +56,7 @@ public class DeepLinkingPlugin implements SweetJuicePlugin {
             
             // Forward the URL to the Go layer
             String payload = "[\"" + url + "\"]";
-            Sweetjuice.handleNativeAction("deeplinking:received", payload);
+            Juiceapp.handleNativeAction("deeplinking:received", payload);
         }
     }
 }

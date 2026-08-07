@@ -1,6 +1,9 @@
-package sweetjuice
+package juiceapp
 
 import (
+	"encoding/json"
+
+	"github.com/sweet-juice/sweetjuice/app"
 	"github.com/sweet-juice/sweetjuice/core"
 )
 
@@ -30,4 +33,34 @@ func HandleNativeAction(methodKey string, jsonArgsPayload string) string {
 // PollNativeEvent allows Go to check for any events sent from Java and retrieve them as a JSON string.
 func PollNativeEvent() string {
 	return core.NewMobileBridge().PollNativeEvent()
+}
+
+// RegisterPlugin records a plugin definition so the native side can instantiate and register it.
+func RegisterPlugin(domain, javaPkg, className string) {
+	core.RegisterPlugin(&core.PluginDefinition{
+		Name:    className,
+		Domain:  domain,
+		JavaPkg: javaPkg,
+		Class:   className,
+	})
+}
+
+// GetRegisteredPlugins returns JSON array of all plugins registered from Go.
+func GetRegisteredPlugins() string {
+	defs := core.GetRegisteredPlugins()
+	items := make([]map[string]string, len(defs))
+	for i, d := range defs {
+		items[i] = map[string]string{
+			"domain":  d.Domain,
+			"javaPkg": d.JavaPkg,
+			"class":   d.Class,
+		}
+	}
+	bytes, _ := json.Marshal(items)
+	return string(bytes)
+}
+
+// ReRender requests a UI re-render from the native side.
+func ReRender() {
+	app.ReRender()
 }

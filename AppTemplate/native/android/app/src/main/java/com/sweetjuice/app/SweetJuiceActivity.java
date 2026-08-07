@@ -11,9 +11,12 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.material.color.DynamicColors;
 import com.sweetjuice.plugin.SweetJuicePlugin;
 import com.sweetjuice.plugin.SweetJuiceWidgetFactory;
-import sweetjuice.Sweetjuice;
+import org.json.JSONArray;
+import org.json.JSONException;
+import juiceapp.Juiceapp;
 
 public class SweetJuiceActivity extends AppCompatActivity {
 
@@ -23,6 +26,7 @@ public class SweetJuiceActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        DynamicColors.applyToActivityIfAvailable(this);
 
         ((SweetJuiceApplication) getApplication()).setActiveActivity(this);
 
@@ -30,6 +34,8 @@ public class SweetJuiceActivity extends AppCompatActivity {
         for (SweetJuicePlugin plugin : app.getPlugins().values()) {
             plugin.onAttach(this);
         }
+
+        registerGoPlugins(app);
 
         ScrollView scrollView = new ScrollView(this);
         scrollView.setFillViewport(true);
@@ -56,14 +62,36 @@ public class SweetJuiceActivity extends AppCompatActivity {
         showFallback("Starting Sweet Juice...");
 
         try {
-            Sweetjuice.startApplication();
+            Juiceapp.startApplication();
         } catch (Throwable t) {
             Log.e("SweetJuice", "Go bridge failed", t);
             showFallback("Bridge error: " + t.getMessage());
             return;
         }
 
+        registerGoPlugins(app);
+
+        for (SweetJuicePlugin plugin : app.getPlugins().values()) {
+            for (SweetJuiceWidgetFactory factory : plugin.getWidgetFactories()) {
+                mUIManager.registerWidgetFactory(factory);
+            }
+            plugin.onWidgetFactoriesRegistered(mUIManager);
+        }
+
         handleIntent(getIntent());
+
+        Juiceapp.reRender();
+    }
+
+    private void registerGoPlugins(SweetJuiceApplication app) {
+        try {
+            String pluginsJson = Juiceapp.getRegisteredPlugins();
+            JSONArray plugins = new JSONArray(pluginsJson);
+            Log.d("SweetJuice", "Registering " + plugins.length() + " Go plugins");
+            app.handlePluginRegister(pluginsJson);
+        } catch (Exception e) {
+            Log.w("SweetJuice", "Go plugin registration failed", e);
+        }
     }
 
     void showFallback(String msg) {
@@ -113,6 +141,12 @@ public class SweetJuiceActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         ((SweetJuiceApplication) getApplication()).setActiveActivity(this);
+        try {
+            Juiceapp.handleNativeAction("app:resumed", "[]");
+            Juiceapp.pollNativeEvent();
+        } catch (Exception e) {
+            Log.w("SweetJuice", "onResume event dispatch failed", e);
+        }
     }
 
     @Override

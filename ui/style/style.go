@@ -86,3 +86,60 @@ type SegmentedButton struct {
 type ButtonGroup struct {
 	Orientation string `json:"orientation,omitempty"` // horizontal, vertical
 }
+
+// Image style properties
+type Image struct {
+	Src               string `json:"src,omitempty"`
+	ContentDescription string `json:"contentDescription,omitempty"`
+	ScaleType         string `json:"scaleType,omitempty"` // fit, centerCrop, centerInside
+}
+
+// Video style properties
+type Video struct {
+	Src      string `json:"src,omitempty"`
+	Autoplay bool   `json:"autoplay,omitempty"`
+	Loop     bool   `json:"loop,omitempty"`
+	Muted    bool   `json:"muted,omitempty"`
+	Controls bool   `json:"controls,omitempty"`
+}
+
+// Navigation / AppBar style properties
+type TopAppBar struct {
+	Title            string `json:"title,omitempty"`
+	NavigationIcon   string `json:"navigationIcon,omitempty"`
+	BackgroundColor  string `json:"backgroundColor,omitempty"`
+}
+
+type BottomAppBar struct {
+	BackgroundColor  string `json:"backgroundColor,omitempty"`
+}
+
+type NavigationBar struct {
+	BackgroundColor  string `json:"backgroundColor,omitempty"`
+	SelectedItemId   string `json:"selectedItemId,omitempty"`
+}
+
+type NavigationRail struct {
+	BackgroundColor  string `json:"backgroundColor,omitempty"`
+	SelectedItemId   string `json:"selectedItemId,omitempty"`
+	Header           string `json:"header,omitempty"`
+}
+
+type SearchBar struct {
+	Hint             string `json:"hint,omitempty"`
+	ShowDocked       bool   `json:"showDocked,omitempty"`
+	BackgroundColor  string `json:"backgroundColor,omitempty"`
+}
+
+type Tabs struct {
+	Primary          []string `json:"primary,omitempty"`
+	Secondary        []string `json:"secondary,omitempty"`
+	Selected         string   `json:"selected,omitempty"`
+}
+
+type Toolbar struct {
+	Items            []map[string]string `json:"items,omitempty"`
+	Orientation      string              `json:"orientation,omitempty"` // horizontal, vertical
+	BackgroundColor  string              `json:"backgroundColor,omitempty"`
+	Floating         bool                `json:"floating,omitempty"`
+}

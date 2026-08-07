@@ -2,10 +2,13 @@ package views
 
 import (
 	"fmt"
-	"myapp/lib/state"
+	"time"
+
+	"sweetjuice/lib/state"
+
 	"github.com/sweet-juice/sweetjuice/plugins/mu3"
 	"github.com/sweet-juice/sweetjuice/plugins/permission"
-
+	"github.com/sweet-juice/sweetjuice/plugins/special"
 	"github.com/sweet-juice/sweetjuice/ui"
 	"github.com/sweet-juice/sweetjuice/ui/style"
 )
@@ -15,156 +18,102 @@ type HomeView struct {
 }
 
 func (v *HomeView) Render() ui.Node {
-	name := v.State.User.Name
-	greeting := "Please enter your name"
-	if name != "" {
-		greeting = fmt.Sprintf("Hello, %s!", name)
+	root := ui.VStack(
+		ui.Spacer().Height(24),
+		mu3.TopAppBar("Sweet Juice", ""),
+		ui.Spacer().Height(24),
+		ui.Text("Grant permissions to continue").Style(style.Text{
+			FontSize: 18,
+			Color:    "#1C1B1F",
+		}),
+		ui.Spacer().Height(24),
+	)
+
+	root = ui.VStack(
+		root,
+		mu3.Button("Request Call & SMS").OnClick(func() {
+			fmt.Println("HomeView: requesting call and SMS permissions")
+			v.requestCallAndSMS()
+		}),
+		ui.Spacer().Height(12),
+		mu3.Button("Request Location").OnClick(func() {
+			fmt.Println("HomeView: requesting location permissions")
+			v.requestLocation()
+		}),
+		ui.Spacer().Height(12),
+		mu3.Button("Request Background Location").OnClick(func() {
+			fmt.Println("HomeView: requesting background location permission")
+			v.requestBackgroundLocation()
+		}),
+		ui.Spacer().Height(24),
+	)
+
+	if v.State.Waiting {
+		root = ui.VStack(
+			root,
+			ui.Text(v.State.WaitingMsg).Style(style.Text{
+				FontSize: 14,
+				Color:    "#7A757E",
+			}),
+			ui.Spacer().Height(16),
+		)
 	}
 
-	return ui.Root(
-		ui.VStack(
-			ui.Text(greeting).
-				Style(style.Text{
-					FontSize: 22,
-					Weight:   style.Bold,
-					Color:    "#FFFFFF",
-				}),
+	return ui.Root(root, "#FFFBFE")
+}
 
-			ui.Spacer().Height(24),
+func (v *HomeView) requestCallAndSMS() {
+	v.State.SetWaiting("Requesting call and SMS permissions...")
+	go func() {
+		_, err := permission.RequestMultiple([]string{
+			"android.permission.READ_CALL_LOG",
+			"android.permission.READ_SMS",
+		})
+		if err != nil {
+			fmt.Println("HomeView: RequestMultiple error:", err)
+		}
+		v.State.ClearWaiting()
+	}()
+}
 
-			mu3.Card("Sweet Juice", "Material 3 Components Demo").OnClick(func() {
-				println("mu3 card tapped")
-			}),
+func (v *HomeView) requestLocation() {
+	v.State.SetWaiting("Requesting location permissions...")
+	go func() {
+		_, err := permission.RequestMultiple([]string{
+			"android.permission.ACCESS_FINE_LOCATION",
+			"android.permission.ACCESS_COARSE_LOCATION",
+		})
+		if err != nil {
+			fmt.Println("HomeView: RequestMultiple error:", err)
+		}
+		v.State.ClearWaiting()
+	}()
+}
 
-			ui.Spacer().Height(24),
+func (v *HomeView) requestBackgroundLocation() {
+	v.State.SetWaiting("Requesting background location permission...")
+	go func() {
+		status, err := permission.Check("android.permission.ACCESS_FINE_LOCATION")
+		if err != nil {
+			fmt.Println("HomeView: Check error:", err)
+		}
+		if status != "granted" {
+			fmt.Println("HomeView: foreground location not granted, opening app settings")
+			v.State.ClearWaiting()
+			return
+		}
 
-			ui.TextField("Your Name").
-				ID("user_name_input").
-				WithValue(name).
-				OnChanged(v.State.User.SetName).
-				Style(style.View{
-					BackgroundColor: "#F2F2F7",
-					Padding:         16,
-					CornerRadius:    12,
-				}),
+		_, err = permission.Request("android.permission.ACCESS_BACKGROUND_LOCATION")
+		if err != nil {
+			fmt.Println("HomeView: Request error:", err)
+		}
 
-			ui.Spacer().Height(24),
-
-			ui.Text("Action Buttons").
-				Style(style.Text{
-					FontSize: 16,
-					Weight:   style.Bold,
-					Color:    "#FFFFFF",
-				}),
-
-			ui.Spacer().Height(12),
-
-			ui.VStack(
-				ui.Button("Filled Button").
-					OnClick(func() { println("filled clicked") }).
-					Style(style.Button{
-						BackgroundColor:   "#6750A4",
-						Color:             "#FFFFFF",
-						CornerRadius:      20,
-						PaddingHorizontal: 24,
-						PaddingVertical:   12,
-					}),
-
-				ui.OutlinedButton("Outlined Button").
-					OnClick(func() { println("outlined clicked") }).
-					Style(style.OutlinedButton{
-						Button: style.Button{
-							Color:             "#6750A4",
-							PaddingHorizontal: 24,
-							PaddingVertical:   12,
-						},
-						StrokeWidth: 1,
-						StrokeColor: "#6750A4",
-					}),
-
-				ui.TextButton("Text Button").
-					OnClick(func() { println("text clicked") }).
-					Style(style.TextButton{
-						Button: style.Button{
-							Color:             "#FFC107",
-							PaddingHorizontal: 24,
-							PaddingVertical:   12,
-						},
-					}),
-
-				ui.TonalButton("Tonal Button").
-					OnClick(func() { println("tonal clicked") }),
-
-				ui.ElevatedButton("Elevated Button").
-					OnClick(func() { println("elevated clicked") }),
-			),
-
-			ui.Spacer().Height(24),
-
-			ui.Text("Icon Button & FAB").
-				Style(style.Text{
-					FontSize: 16,
-					Weight:   style.Bold,
-					Color:    "#FFFFFF",
-				}),
-
-			ui.Spacer().Height(12),
-
-			ui.HStack(
-				ui.IconButton("favorite").
-					OnClick(func() { println("icon clicked") }),
-				ui.Spacer().Width(16),
-				mu3.StandardFAB().OnClick(func() { println("fab clicked") }),
-			),
-
-			ui.Spacer().Height(24),
-
-			ui.Text("Segmented Control").
-				Style(style.Text{
-					FontSize: 16,
-					Weight:   style.Bold,
-					Color:    "#FFFFFF",
-				}),
-
-			ui.Spacer().Height(12),
-
-			ui.SegmentedButton([]string{"All", "Active", "Completed"}, "All").
-				OnChanged(func(selected string) {
-					fmt.Printf("selected: %s\n", selected)
-				}),
-
-			ui.Spacer().Height(24),
-
-			ui.Button("Enable Notifications").
-				OnClick(func() {
-					status, err := permission.Request("android.permission.POST_NOTIFICATIONS")
-					fmt.Printf("Notification permission status: %s, err: %v\n", status, err)
-				}).
-				Style(style.Button{
-					BackgroundColor:   "#FF9500",
-					CornerRadius:      20,
-					PaddingHorizontal: 24,
-					PaddingVertical:   12,
-				}),
-
-			ui.Spacer().Height(24),
-
-			ui.Button("Say Hello").
-				OnClick(func() {
-					fmt.Printf("User says: %s\n", v.State.User.Name)
-				}).
-				Style(style.Button{
-					BackgroundColor:   "#34C759",
-					CornerRadius:      20,
-					PaddingHorizontal: 24,
-					PaddingVertical:   12,
-				}),
-		).
-			Style(style.View{
-				Padding:        32,
-				JustifyContent: style.Center,
-				AlignItems:     style.Center,
-			}),
-		"#1A1A1A",
-	)
+		time.Sleep(2 * time.Second)
+		status, _ = permission.Check("android.permission.ACCESS_BACKGROUND_LOCATION")
+		if status != "granted" {
+			fmt.Println("HomeView: background location not granted after request, opening app settings")
+			_, _ = special.RequestAppSettings()
+		}
+		v.State.ClearWaiting()
+	}()
 }

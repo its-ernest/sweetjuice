@@ -67,3 +67,7 @@ func (a *Application) InvokeNativeCall(methodKey string, rawArgs []json.RawMessa
 	}
 	return nil, fmt.Errorf("native method identity '%s' not registered with application", methodKey)
 }
+
+func GetGlobalApp() *Application {
+	return globalAppInstance
+}

@@ -30,10 +30,10 @@ Sweet Juice is an early port of Go v3 implementation to support mobile devies.
 1. [Install & Build](docs/INSTALL.md)
 2. [CLI reference](docs/CLI.md)
 3. [Contributing](docs/CONTRIBUTING.md)
-4. [Plugin docs](docs/PLUGINS_DOCS.md)
-5. [Android plugin guide](docs/PLUGINS_ANDROID.md)
-6. [iOS plugin guide](#)
-7. [Example Sweet Juice app](github.com/sweet-juice/examples)
+4. [Documentation Index](docs/INDEX.md)
+5. [Plugin Development Guide](docs/PLUGINS_DOCS.md)
+6. [Android Plugin Guide](docs/PLUGINS_ANDROID.md)
+7. [iOS Plugin Guide](docs/PLUGINS_IOS.md)
 8. [Benchmarks](docs/BENCHMARKS.md)
 
 ## Requirements

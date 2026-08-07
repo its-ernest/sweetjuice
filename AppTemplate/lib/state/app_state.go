@@ -4,23 +4,27 @@ import (
 	"github.com/sweet-juice/sweetjuice/app"
 )
 
-// MainAppState is the single source of truth for the entire app.
+// MainAppState holds the global application state.
 type MainAppState struct {
-	User *UserState
+	Waiting    bool
+	WaitingMsg string
 }
 
+// NewMainAppState creates a new MainAppState.
 func NewMainAppState() *MainAppState {
-	return &MainAppState{
-		User: &UserState{Name: ""},
-	}
+	return &MainAppState{}
 }
 
-// UserState handles user-related data and logic
-type UserState struct {
-	Name string
+// SetWaiting shows a waiting message.
+func (s *MainAppState) SetWaiting(msg string) {
+	s.Waiting = true
+	s.WaitingMsg = msg
+	app.ReRender()
 }
 
-func (u *UserState) SetName(name string) {
-	u.Name = name
+// ClearWaiting hides the waiting message.
+func (s *MainAppState) ClearWaiting() {
+	s.Waiting = false
+	s.WaitingMsg = ""
 	app.ReRender()
 }

@@ -44,7 +44,7 @@ type TextNode struct {
 
 func Text(value string) *TextNode {
 	return &TextNode{
-		BaseNode: BaseNode{Type: "text", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:text", ID: genID()},
 		Value:    value,
 	}
 }
@@ -82,7 +82,7 @@ type ButtonNode struct {
 
 func Button(text string) *ButtonNode {
 	return &ButtonNode{
-		BaseNode: BaseNode{Type: "button", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:button", ID: genID()},
 		Text:     text,
 	}
 }
@@ -126,7 +126,7 @@ type TextFieldNode struct {
 
 func TextField(placeholder string) *TextFieldNode {
 	return &TextFieldNode{
-		BaseNode:    BaseNode{Type: "textfield", ID: genID()},
+		BaseNode:    BaseNode{Type: "mu3:textfield", ID: genID()},
 		Placeholder: placeholder,
 	}
 }
@@ -224,7 +224,7 @@ type CardNode struct {
 func Card(children ...Node) *CardNode {
 	return &CardNode{
 		StackNode: StackNode{
-			BaseNode: BaseNode{Type: "card", ID: genID()},
+			BaseNode: BaseNode{Type: "mu3:card", ID: genID()},
 			Children: children,
 		},
 	}
@@ -333,8 +333,18 @@ func (n *WidgetNode) Prop(key string, value interface{}) *WidgetNode {
 	return n
 }
 
+func (n *WidgetNode) Style(s interface{}) *WidgetNode {
+	n.BaseNode.Style = s
+	return n
+}
+
 func (n *WidgetNode) OnClick(h func()) *WidgetNode {
 	n.register("click", func(interface{}) { h() })
+	return n
+}
+
+func (n *WidgetNode) OnLongPress(h func()) *WidgetNode {
+	n.register("long_press", func(interface{}) { h() })
 	return n
 }
 
@@ -358,7 +368,7 @@ func (n *WidgetNode) Serialize() (map[string]interface{}, error) {
 
 func TextButton(text string) *TextButtonNode {
 	return &TextButtonNode{
-		BaseNode: BaseNode{Type: "text-button", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:text-button", ID: genID()},
 		Text:     text,
 	}
 }
@@ -395,7 +405,7 @@ func (n *TextButtonNode) Serialize() (map[string]interface{}, error) {
 
 func OutlinedButton(text string) *OutlinedButtonNode {
 	return &OutlinedButtonNode{
-		BaseNode: BaseNode{Type: "outlined-button", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:outlined-button", ID: genID()},
 		Text:     text,
 	}
 }
@@ -432,7 +442,7 @@ func (n *OutlinedButtonNode) Serialize() (map[string]interface{}, error) {
 
 func TonalButton(text string) *TonalButtonNode {
 	return &TonalButtonNode{
-		BaseNode: BaseNode{Type: "tonal-button", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:tonal-button", ID: genID()},
 		Text:     text,
 	}
 }
@@ -469,7 +479,7 @@ func (n *TonalButtonNode) Serialize() (map[string]interface{}, error) {
 
 func ElevatedButton(text string) *ElevatedButtonNode {
 	return &ElevatedButtonNode{
-		BaseNode: BaseNode{Type: "elevated-button", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:elevated-button", ID: genID()},
 		Text:     text,
 	}
 }
@@ -506,7 +516,7 @@ func (n *ElevatedButtonNode) Serialize() (map[string]interface{}, error) {
 
 func IconButton(name string) *IconButtonNode {
 	return &IconButtonNode{
-		BaseNode: BaseNode{Type: "icon-button", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:icon-button", ID: genID()},
 		Name:     name,
 	}
 }
@@ -543,13 +553,13 @@ func (n *IconButtonNode) Serialize() (map[string]interface{}, error) {
 
 func FAB() *FabNode {
 	return &FabNode{
-		BaseNode: BaseNode{Type: "fab", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:fab", ID: genID()},
 	}
 }
 
 func ExtendedFAB(text string) *FabNode {
 	return &FabNode{
-		BaseNode: BaseNode{Type: "extended-fab", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:extended-fab", ID: genID()},
 		Text:     text,
 	}
 }
@@ -586,7 +596,7 @@ func (n *FabNode) Serialize() (map[string]interface{}, error) {
 
 func SegmentedButton(options []string, selected string) *SegmentedButtonNode {
 	return &SegmentedButtonNode{
-		BaseNode: BaseNode{Type: "segmented-button", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:segmented-button", ID: genID()},
 		Options:  options,
 		Selected: selected,
 	}
@@ -631,7 +641,7 @@ func (n *SegmentedButtonNode) Serialize() (map[string]interface{}, error) {
 
 func ButtonGroup(children ...Node) *ButtonGroupNode {
 	return &ButtonGroupNode{
-		BaseNode: BaseNode{Type: "button-group", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:button-group", ID: genID()},
 		Children: children,
 	}
 }
@@ -662,6 +672,128 @@ func (n *ButtonGroupNode) Serialize() (map[string]interface{}, error) {
 		"children": children,
 		"style":    n.BaseNode.Style,
 		"events":   n.Events,
+	}, nil
+}
+
+// Image Node
+type ImageNode struct {
+	BaseNode
+	Src string
+}
+
+func Image(src string) *ImageNode {
+	return &ImageNode{
+		BaseNode: BaseNode{Type: "mu3:image", ID: genID()},
+		Src:      src,
+	}
+}
+
+func (n *ImageNode) ID(id string) *ImageNode {
+	n.BaseNode.SetID(id)
+	return n
+}
+
+func (n *ImageNode) Style(s style.Image) *ImageNode {
+	n.BaseNode.Style = s
+	return n
+}
+
+func (n *ImageNode) OnClick(h func()) *ImageNode {
+	n.register("click", func(interface{}) { h() })
+	return n
+}
+
+func (n *ImageNode) Serialize() (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"type":   n.Type,
+		"id":     n.BaseNode.ID,
+		"src":    n.Src,
+		"style":  n.BaseNode.Style,
+		"events": n.Events,
+	}, nil
+}
+
+// Video Node
+type VideoNode struct {
+	BaseNode
+	Src      string
+	Autoplay bool
+	Loop     bool
+	Muted    bool
+	Controls bool
+}
+
+func Video(src string) *VideoNode {
+	return &VideoNode{
+		BaseNode: BaseNode{Type: "mu3:video", ID: genID()},
+		Src:      src,
+	}
+}
+
+func (n *VideoNode) ID(id string) *VideoNode {
+	n.BaseNode.SetID(id)
+	return n
+}
+
+func (n *VideoNode) Style(s style.Video) *VideoNode {
+	n.BaseNode.Style = s
+	return n
+}
+
+func (n *VideoNode) OnClick(h func()) *VideoNode {
+	n.register("click", func(interface{}) { h() })
+	return n
+}
+
+func (n *VideoNode) Serialize() (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"type":      n.Type,
+		"id":        n.BaseNode.ID,
+		"src":       n.Src,
+		"autoplay":  n.Autoplay,
+		"loop":      n.Loop,
+		"muted":     n.Muted,
+		"controls":  n.Controls,
+		"style":     n.BaseNode.Style,
+		"events":    n.Events,
+	}, nil
+}
+
+// Dialog Node - renders as a native AlertDialog overlay
+type DialogNode struct {
+	BaseNode
+	Title      string
+	Message    string
+	ButtonText string
+}
+
+func Dialog(title, message, buttonText string) *DialogNode {
+	return &DialogNode{
+		BaseNode:   BaseNode{Type: "ui:dialog", ID: genID()},
+		Title:      title,
+		Message:    message,
+		ButtonText: buttonText,
+	}
+}
+
+func (n *DialogNode) ID(id string) *DialogNode {
+	n.BaseNode.SetID(id)
+	return n
+}
+
+func (n *DialogNode) OnConfirm(h func(interface{})) *DialogNode {
+	n.register("confirm", func(data interface{}) { h(data) })
+	return n
+}
+
+func (n *DialogNode) Serialize() (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"type":       n.Type,
+		"id":         n.BaseNode.ID,
+		"title":      n.Title,
+		"message":    n.Message,
+		"buttonText": n.ButtonText,
+		"events":     n.Events,
 	}, nil
 }
 

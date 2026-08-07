@@ -6,7 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
-import sweetjuice.Sweetjuice;
+import juiceapp.Juiceapp;
 
 /**
  * SweetJuiceBackgroundWorker is the bridge between Android WorkManager and Go.
@@ -33,7 +33,7 @@ public class SweetJuiceBackgroundWorker extends Worker {
         String payload = "[{\"task_key\":\"" + taskKey + "\"}]";
 
         // This invokes Go directly to execute backend processing
-        String goResult = Sweetjuice.handleNativeAction("workmanager:execute", payload);
+        String goResult = Juiceapp.handleNativeAction("workmanager:execute", payload);
         Log.d(TAG, "Go execution response: " + goResult);
 
         // Allow Go to signal a retry if processing failed
