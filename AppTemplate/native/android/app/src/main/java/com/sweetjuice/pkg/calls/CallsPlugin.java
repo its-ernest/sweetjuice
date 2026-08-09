@@ -25,11 +25,11 @@ public class CallsPlugin implements SweetJuicePlugin {
     @Override
     public String handleAction(String action, String jsonArgsPayload) {
         try {
-            if ("calls:getRecent".equals(action)) {
+            if ("getRecent".equals(action)) {
                 int limit = new JSONObject(jsonArgsPayload).optInt("limit", 50);
                 return getCalls(limit);
             }
-            if ("calls:getAll".equals(action)) {
+            if ("getAll".equals(action)) {
                 return getCalls(-1);
             }
             return new JSONObject().put("error", "Unknown action").toString();

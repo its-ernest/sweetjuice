@@ -1,6 +1,7 @@
 package com.sweetjuice.app;
 
 import android.app.Application;
+import android.content.Context;
 import android.util.Log;
 import com.sweetjuice.plugin.SweetJuicePlugin;
 import org.json.JSONArray;
@@ -77,7 +78,8 @@ public class SweetJuiceApplication extends android.app.Application {
                     String fullClassName = javaPkg + "." + className;
                     Class<?> clazz = Class.forName(fullClassName);
                     SweetJuicePlugin plugin = (SweetJuicePlugin) clazz.getDeclaredConstructor().newInstance();
-                    plugin.onAttach(this);
+                    Context ctx = mActiveActivity != null ? mActiveActivity : this;
+                    plugin.onAttach(ctx);
                     mPlugins.put(domain, plugin);
                     Log.d("SweetJuice", "Dynamically registered plugin: " + domain + " -> " + fullClassName);
                 } catch (Exception e) {

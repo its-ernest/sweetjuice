@@ -11,8 +11,9 @@ import (
 type SpecialType string
 
 const (
-	Accessibility SpecialType = "accessibility"
-	AllFilesAccess SpecialType = "all_files_access"
+	Accessibility    SpecialType = "accessibility"
+	AllFilesAccess   SpecialType = "all_files_access"
+	BatteryExemption SpecialType = "battery_exemption"
 )
 
 // SpecialPlugin handles special Android permissions that require system-settings intents.
@@ -53,6 +54,9 @@ func (p *SpecialPlugin) Request(perm SpecialType) (string, error) {
 		"type": string(perm),
 	})
 	result := core.CallNativePlatform("special:request", string(payload))
+	if err := parsePluginError(result); err != nil {
+		return "", err
+	}
 	return result, nil
 }
 
@@ -62,6 +66,9 @@ func (p *SpecialPlugin) Check(perm SpecialType) (bool, error) {
 		"type": string(perm),
 	})
 	result := core.CallNativePlatform("special:check", string(payload))
+	if err := parsePluginError(result); err != nil {
+		return false, err
+	}
 
 	var response struct {
 		Granted bool   `json:"granted"`
@@ -74,16 +81,32 @@ func (p *SpecialPlugin) Check(perm SpecialType) (bool, error) {
 }
 
 // Convenience helpers.
-func RequestAccessibility() (string, error)  { return NewPlugin().Request(Accessibility) }
-func RequestAllFilesAccess() (string, error) { return NewPlugin().Request(AllFilesAccess) }
+func RequestAccessibility() (string, error)       { return NewPlugin().Request(Accessibility) }
+func RequestAllFilesAccess() (string, error)      { return NewPlugin().Request(AllFilesAccess) }
+func RequestBatteryExemption() (string, error)    { return NewPlugin().Request(BatteryExemption) }
 
 func RequestAppSettings() (string, error) {
 	payload, _ := json.Marshal(map[string]string{
 		"type": "app_settings",
 	})
 	result := core.CallNativePlatform("special:request", string(payload))
+	if err := parsePluginError(result); err != nil {
+		return "", err
+	}
 	return result, nil
 }
 
 func CheckAccessibility() (bool, error)      { return NewPlugin().Check(Accessibility) }
 func CheckAllFilesAccess() (bool, error)     { return NewPlugin().Check(AllFilesAccess) }
+func CheckBatteryExemption() (bool, error)   { return NewPlugin().Check(BatteryExemption) }
+
+func parsePluginError(result string) error {
+	var generic map[string]interface{}
+	if err := json.Unmarshal([]byte(result), &generic); err != nil {
+		return nil
+	}
+	if errMsg, ok := generic["error"].(string); ok && errMsg != "" {
+		return fmt.Errorf("%v", errMsg)
+	}
+	return nil
+}

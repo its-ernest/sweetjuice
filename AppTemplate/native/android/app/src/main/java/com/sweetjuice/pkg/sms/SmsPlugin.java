@@ -27,16 +27,16 @@ public class SmsPlugin implements SweetJuicePlugin {
     @Override
     public String handleAction(String action, String jsonArgsPayload) {
         try {
-            if ("sms:getInbox".equals(action)) {
+            if ("getInbox".equals(action)) {
                 return getSmsFolder(Telephony.Sms.Inbox.CONTENT_URI, "inbox");
             }
-            if ("sms:getSent".equals(action)) {
+            if ("getSent".equals(action)) {
                 return getSmsFolder(Telephony.Sms.Sent.CONTENT_URI, "sent");
             }
-            if ("sms:getDrafts".equals(action)) {
+            if ("getDrafts".equals(action)) {
                 return getSmsFolder(Telephony.Sms.Draft.CONTENT_URI, "draft");
             }
-            if ("sms:getAll".equals(action)) {
+            if ("getAll".equals(action)) {
                 return getAllSms();
             }
             return new JSONObject().put("error", "Unknown action").toString();
@@ -47,7 +47,8 @@ public class SmsPlugin implements SweetJuicePlugin {
 
     private String getSmsFolder(Uri uri, String folder) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            if (!Telephony.Sms.getDefaultSmsPackage(mContext).equals(mContext.getPackageName())) {
+            String defaultSmsPackage = Telephony.Sms.getDefaultSmsPackage(mContext);
+            if (defaultSmsPackage != null && !defaultSmsPackage.equals(mContext.getPackageName())) {
                 return errorJson("Not default SMS app");
             }
         }

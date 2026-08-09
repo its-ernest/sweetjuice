@@ -34,13 +34,13 @@ public class GpsPlugin implements SweetJuicePlugin {
     @Override
     public String handleAction(String action, String jsonArgsPayload) {
         try {
-            if ("gps:getCurrentLocation".equals(action)) {
+            if ("getCurrentLocation".equals(action)) {
                 return getCurrentLocation();
             }
-            if ("gps:startMonitoring".equals(action)) {
+            if ("startMonitoring".equals(action)) {
                 return startMonitoring();
             }
-            if ("gps:stopMonitoring".equals(action)) {
+            if ("stopMonitoring".equals(action)) {
                 return stopMonitoring();
             }
             return new JSONObject().put("error", "Unknown action").toString();

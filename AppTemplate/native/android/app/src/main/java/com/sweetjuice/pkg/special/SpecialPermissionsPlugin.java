@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Environment;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.util.Log;
 import androidx.core.content.ContextCompat;
@@ -55,6 +56,25 @@ public class SpecialPermissionsPlugin implements SweetJuicePlugin {
             } else {
                 return errorJson("All files access requires Android 11+");
             }
+        } else if ("battery_exemption".equals(type)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                String packageName = mContext.getPackageName();
+                PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
+                if (pm == null) {
+                    return errorJson("PowerManager not available");
+                }
+                if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                    intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                    intent.setData(android.net.Uri.parse("package:" + packageName));
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    mContext.startActivity(intent);
+                    return okJson("launched");
+                } else {
+                    return okJson("already_exempted");
+                }
+            } else {
+                return errorJson("Battery exemption requires Android 6.0+");
+            }
         } else if ("app_settings".equals(type)) {
             intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
             intent.setData(android.net.Uri.parse("package:" + mContext.getPackageName()));
@@ -72,6 +92,8 @@ public class SpecialPermissionsPlugin implements SweetJuicePlugin {
             granted = hasAccessibilityAccess();
         } else if ("all_files_access".equals(type)) {
             granted = hasAllFilesAccess();
+        } else if ("battery_exemption".equals(type)) {
+            granted = hasBatteryExemption();
         } else {
             return errorJson("Unknown special permission type: " + type);
         }
@@ -97,6 +119,14 @@ public class SpecialPermissionsPlugin implements SweetJuicePlugin {
     private boolean hasAllFilesAccess() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             return Environment.isExternalStorageManager();
+        }
+        return true;
+    }
+
+    private boolean hasBatteryExemption() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
+            return pm != null && pm.isIgnoringBatteryOptimizations(mContext.getPackageName());
         }
         return true;
     }

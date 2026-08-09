@@ -50,6 +50,9 @@ func (p *PermissionPlugin) Check(permission string) (string, error) {
 		"permission": permission,
 	})
 	result := core.CallNativePlatform("permissions:check", string(payload))
+	if err := parsePluginError(result); err != nil {
+		return "unknown", err
+	}
 	var resultMap map[string]interface{}
 	json.Unmarshal([]byte(result), &resultMap)
 	if status, ok := resultMap["status"].(string); ok {
@@ -64,6 +67,9 @@ func (p *PermissionPlugin) Request(permission string) (string, error) {
 		"permission": permission,
 	})
 	result := core.CallNativePlatform("permissions:request", string(payload))
+	if err := parsePluginError(result); err != nil {
+		return "", err
+	}
 	return result, nil
 }
 
@@ -74,7 +80,21 @@ func (p *PermissionPlugin) RequestMultiple(permissions []string) (string, error)
 		"permissions": permissions,
 	})
 	result := core.CallNativePlatform("permissions:requestMultiple", string(payload))
+	if err := parsePluginError(result); err != nil {
+		return "", err
+	}
 	return result, nil
+}
+
+func parsePluginError(result string) error {
+	var generic map[string]interface{}
+	if err := json.Unmarshal([]byte(result), &generic); err != nil {
+		return nil
+	}
+	if errMsg, ok := generic["error"].(string); ok && errMsg != "" {
+		return fmt.Errorf("%v", errMsg)
+	}
+	return nil
 }
 
 // Check queries the status of a specific permission synchronously.

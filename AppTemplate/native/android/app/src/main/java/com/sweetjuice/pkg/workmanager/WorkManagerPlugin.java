@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import androidx.work.Constraints;
 import androidx.work.Data;
+import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
@@ -56,6 +57,7 @@ public class WorkManagerPlugin implements SweetJuicePlugin {
 
             if ("enqueuePeriodic".equals(action)) {
                 long intervalMinutes = args.optLong("interval_minutes", 15);
+                boolean replaceExisting = args.optBoolean("replace_existing", false);
                 Data inputData = new Data.Builder().putString("task_key", taskKey).build();
 
                 PeriodicWorkRequest request = new PeriodicWorkRequest.Builder(
@@ -65,7 +67,11 @@ public class WorkManagerPlugin implements SweetJuicePlugin {
                         .addTag(taskKey)
                         .build();
 
-                WorkManager.getInstance(mContext).enqueue(request);
+                ExistingPeriodicWorkPolicy policy = replaceExisting
+                        ? ExistingPeriodicWorkPolicy.REPLACE
+                        : ExistingPeriodicWorkPolicy.KEEP;
+
+                WorkManager.getInstance(mContext).enqueueUniquePeriodicWork(taskKey, policy, request);
                 return "{\"status\":\"periodic_enqueued\",\"id\":\"" + request.getId().toString() + "\"}";
             }
 
