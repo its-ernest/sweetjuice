@@ -5,6 +5,7 @@ package permission
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/sweet-juice/sweetjuice/core"
 )
@@ -20,47 +21,67 @@ func NewPlugin() *PermissionPlugin {
 	return &PermissionPlugin{}
 }
 
-// Name returns the plugin name "permissions".
-func (p *PermissionPlugin) Name() string {
-	return "permissions"
+type PermissionResult struct {
+	Permission string `json:"permission"`
+	Granted    bool   `json:"granted"`
 }
+
+type PermissionHandler func(PermissionResult)
+
+var globalHandlers []PermissionHandler
+var handlersMu sync.RWMutex
 
 // Init initializes the plugin with the Sweet Juice application context and registers
 // the "permissions:result" native callback handler.
 func (p *PermissionPlugin) Init(app *core.Application) error {
 	p.app = app
 
-	// Register a handler for the "permissions:result" message coming from Android.
-	// This is for Java calling Go.
 	app.RegisterNativeMethod("permissions:result", func(args []json.RawMessage) (interface{}, error) {
 		if len(args) == 0 {
 			return nil, fmt.Errorf("no arguments provided")
 		}
 
-		var result map[string]interface{}
+		var result PermissionResult
 		if err := json.Unmarshal(args[0], &result); err != nil {
+			fmt.Printf("permission: failed to unmarshal result: %v (raw: %s)\n", err, string(args[0]))
 			return nil, err
 		}
 
-		// Emit the result as a Sweet Juice event to the frontend.
+		fmt.Printf("permission: result received: %s granted=%v\n", result.Permission, result.Granted)
 		app.Events.Emit("permissions:changed", result)
+
+		handlersMu.RLock()
+		for _, h := range globalHandlers {
+			go h(result)
+		}
+		handlersMu.RUnlock()
+
 		return map[string]string{"status": "processed"}, nil
 	})
 
 	return nil
 }
 
+// OnResult registers a callback for permission results.
+func (p *PermissionPlugin) OnResult(h PermissionHandler) {
+	handlersMu.Lock()
+	defer handlersMu.Unlock()
+	globalHandlers = append(globalHandlers, h)
+}
+
+func OnResult(h PermissionHandler) {
+	NewPlugin().OnResult(h)
+}
+
 // Check queries the status of a specific permission synchronously.
-// Example permission: "android.permission.CAMERA"
 func (p *PermissionPlugin) Check(permission string) (string, error) {
 	payload, _ := json.Marshal(map[string]string{
 		"permission": permission,
 	})
-
-	// Use CallNativePlatform to call into the Android Java bridge.
-	// This is Go calling Java.
 	result := core.CallNativePlatform("permissions:check", string(payload))
-	// convert result into a string status rather than "{status: granted}"
+	if err := parsePluginError(result); err != nil {
+		return "unknown", err
+	}
 	var resultMap map[string]interface{}
 	json.Unmarshal([]byte(result), &resultMap)
 	if status, ok := resultMap["status"].(string); ok {
@@ -70,14 +91,52 @@ func (p *PermissionPlugin) Check(permission string) (string, error) {
 }
 
 // Request triggers a native permission request dialog on Android.
-// The result will be delivered asynchronously via the "permissions:changed" event.
 func (p *PermissionPlugin) Request(permission string) (string, error) {
 	payload, _ := json.Marshal(map[string]string{
 		"permission": permission,
 	})
-
-	// Use CallNativePlatform to call into the Android Java bridge.
-	// This is Go calling Java.
 	result := core.CallNativePlatform("permissions:request", string(payload))
+	if err := parsePluginError(result); err != nil {
+		return "", err
+	}
 	return result, nil
+}
+
+// RequestMultiple triggers native permission request dialogs on Android for multiple permissions.
+// The native side requests them sequentially and reports individual results via permissions:changed.
+func (p *PermissionPlugin) RequestMultiple(permissions []string) (string, error) {
+	payload, _ := json.Marshal(map[string][]string{
+		"permissions": permissions,
+	})
+	result := core.CallNativePlatform("permissions:requestMultiple", string(payload))
+	if err := parsePluginError(result); err != nil {
+		return "", err
+	}
+	return result, nil
+}
+
+func parsePluginError(result string) error {
+	var generic map[string]interface{}
+	if err := json.Unmarshal([]byte(result), &generic); err != nil {
+		return nil
+	}
+	if errMsg, ok := generic["error"].(string); ok && errMsg != "" {
+		return fmt.Errorf("%v", errMsg)
+	}
+	return nil
+}
+
+// Check queries the status of a specific permission synchronously.
+func Check(permission string) (string, error) {
+	return NewPlugin().Check(permission)
+}
+
+// Request triggers a native permission request dialog on Android.
+func Request(permission string) (string, error) {
+	return NewPlugin().Request(permission)
+}
+
+// RequestMultiple triggers native permission request dialogs on Android for multiple permissions.
+func RequestMultiple(permissions []string) (string, error) {
+	return NewPlugin().RequestMultiple(permissions)
 }

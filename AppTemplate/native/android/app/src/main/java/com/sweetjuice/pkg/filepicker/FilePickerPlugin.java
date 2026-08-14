@@ -13,7 +13,7 @@ import com.sweetjuice.plugin.SweetJuicePlugin;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import sweetjuice.Sweetjuice;
+import juiceapp.Juiceapp;
 
 /**
  * FilePickerPlugin allows selecting files or media from the device.
@@ -87,12 +87,12 @@ public class FilePickerPlugin implements SweetJuicePlugin {
                     }
                     
                     String payload = "[" + result.toString() + "]";
-                    Sweetjuice.handleNativeAction("filepicker:result", payload);
+                    Juiceapp.handleNativeAction("filepicker:result", payload);
                 } catch (JSONException e) {
                     Log.e(TAG, "Failed to build result JSON", e);
                 }
             } else {
-                Sweetjuice.handleNativeAction("filepicker:result", "[{\"error\":\"cancelled\"}]");
+                Juiceapp.handleNativeAction("filepicker:result", "[{\"error\":\"cancelled\"}]");
             }
         }
     }

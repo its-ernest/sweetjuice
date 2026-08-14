@@ -11,10 +11,11 @@ import androidx.core.content.ContextCompat;
 
 import com.sweetjuice.plugin.SweetJuicePlugin;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import sweetjuice.Sweetjuice;
+import juiceapp.Juiceapp;
 
 /**
  * PermissionsPlugin handles system runtime permissions.
@@ -40,13 +41,11 @@ public class PermissionsPlugin implements SweetJuicePlugin {
     public String handleAction(String action, String jsonArgsPayload) {
         if ("check".equals(action)) {
             String perm = parsePermissionFromJson(jsonArgsPayload);
-            // Context is sufficient for checking permissions
             int result = ContextCompat.checkSelfPermission(mContext, perm);
             return result == PackageManager.PERMISSION_GRANTED ? "{\"status\":\"granted\"}" : "{\"status\":\"denied\"}";
         }
 
         if ("request".equals(action)) {
-            // Cannot request UI prompts from the background
             if (mActivity == null) {
                 return "{\"error\":\"No active UI to request permissions\"}";
             }
@@ -55,29 +54,57 @@ public class PermissionsPlugin implements SweetJuicePlugin {
             return "{\"status\":\"requested\"}";
         }
 
+        if ("requestMultiple".equals(action)) {
+            if (mActivity == null) {
+                return "{\"error\":\"No active UI to request permissions\"}";
+            }
+            try {
+                JSONObject obj = new JSONObject(jsonArgsPayload);
+                JSONArray perms = obj.getJSONArray("permissions");
+                String[] permArray = new String[perms.length()];
+                for (int i = 0; i < perms.length(); i++) {
+                    permArray[i] = perms.getString(i);
+                }
+                ActivityCompat.requestPermissions(mActivity, permArray, PERMISSION_REQ_CODE);
+                return "{\"status\":\"requested\"}";
+            } catch (JSONException e) {
+                return errorJson("Invalid permissions payload: " + e.getMessage());
+            }
+        }
+
         return "{\"error\":\"Unknown action\"}";
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == PERMISSION_REQ_CODE && grantResults.length > 0) {
-            boolean granted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
-            String permission = permissions[0];
+        if (requestCode == PERMISSION_REQ_CODE && permissions != null && grantResults != null) {
+            for (int i = 0; i < permissions.length && i < grantResults.length; i++) {
+                boolean granted = grantResults[i] == PackageManager.PERMISSION_GRANTED;
+                String permission = permissions[i];
 
-            JSONObject result = new JSONObject();
-            try {
-                result.put("permission", permission);
-                result.put("granted", granted);
-                String payload = "[" + result.toString() + "]";
-                Sweetjuice.handleNativeAction("permissions:result", payload);
-            } catch (JSONException e) {
-                Log.e("PermissionsPlugin", "Error creating result JSON", e);
+                JSONObject result = new JSONObject();
+                try {
+                    result.put("permission", permission);
+                    result.put("granted", granted);
+                    String payload = "[" + result.toString() + "]";
+                    Juiceapp.handleNativeAction("permissions:result", payload);
+                } catch (JSONException e) {
+                    Log.e("PermissionsPlugin", "Error creating result JSON", e);
+                }
             }
         }
     }
 
     @Override public void onActivityResult(int r, int rc, Intent d) {}
     @Override public void onNewIntent(Intent intent) {}
+
+    private String errorJson(String message) {
+        try {
+            return new JSONObject().put("error", message).toString();
+        } catch (JSONException e) {
+            return "{\"error\":\"" + message + "\"}";
+        }
+    }
 
     private String parsePermissionFromJson(String json) {
         try {

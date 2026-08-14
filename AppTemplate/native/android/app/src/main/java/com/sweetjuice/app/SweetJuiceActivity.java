@@ -11,9 +11,20 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.material.color.DynamicColors;
+import com.sweetjuice.core.UIManager;
 import com.sweetjuice.plugin.SweetJuicePlugin;
-import sweetjuice.Sweetjuice;
+import com.sweetjuice.plugin.SweetJuiceWidgetFactory;
+import com.sweetjuice.pkg.broadcast.BroadcastPlugin;
+import org.json.JSONArray;
+import org.json.JSONException;
+import juiceapp.Juiceapp;
 
+/**
+ * SweetJuiceActivity is the primary entry point for the user interface.
+ * It initializes the native UI layout, the Go bridge, and manages the 
+ * lifecycle of the application's visual state.
+ */
 public class SweetJuiceActivity extends AppCompatActivity {
 
     private UIManager mUIManager;
@@ -22,6 +33,7 @@ public class SweetJuiceActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        DynamicColors.applyToActivityIfAvailable(this);
 
         ((SweetJuiceApplication) getApplication()).setActiveActivity(this);
 
@@ -30,30 +42,63 @@ public class SweetJuiceActivity extends AppCompatActivity {
             plugin.onAttach(this);
         }
 
+        registerGoPlugins(app);
+
         ScrollView scrollView = new ScrollView(this);
         scrollView.setFillViewport(true);
-        scrollView.setBackgroundColor(Color.WHITE);
+        scrollView.setBackgroundColor(Color.TRANSPARENT);
 
         rootLayout = new LinearLayout(this);
         rootLayout.setOrientation(LinearLayout.VERTICAL);
-        rootLayout.setBackgroundColor(Color.WHITE);
+        rootLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
         scrollView.addView(rootLayout);
         setContentView(scrollView);
 
         mUIManager = new UIManager(this, rootLayout);
 
+        for (SweetJuicePlugin plugin : app.getPlugins().values()) {
+            for (SweetJuiceWidgetFactory factory : plugin.getWidgetFactories()) {
+                mUIManager.registerWidgetFactory(factory);
+            }
+            plugin.onWidgetFactoriesRegistered(mUIManager);
+        }
+
         showFallback("Starting Sweet Juice...");
 
         try {
-            Sweetjuice.startApplication();
-            Sweetjuice.reRender();
+            Juiceapp.startApplication();
         } catch (Throwable t) {
             Log.e("SweetJuice", "Go bridge failed", t);
             showFallback("Bridge error: " + t.getMessage());
             return;
         }
 
+        registerGoPlugins(app);
+
+        for (SweetJuicePlugin plugin : app.getPlugins().values()) {
+            for (SweetJuiceWidgetFactory factory : plugin.getWidgetFactories()) {
+                mUIManager.registerWidgetFactory(factory);
+            }
+            plugin.onWidgetFactoriesRegistered(mUIManager);
+        }
+
         handleIntent(getIntent());
+
+        Juiceapp.reRender();
+    }
+
+    private void registerGoPlugins(SweetJuiceApplication app) {
+        try {
+            String pluginsJson = Juiceapp.getRegisteredPlugins();
+            JSONArray plugins = new JSONArray(pluginsJson);
+            Log.d("SweetJuice", "Registering " + plugins.length() + " Go plugins");
+            app.handlePluginRegister(pluginsJson);
+        } catch (Exception e) {
+            Log.w("SweetJuice", "Go plugin registration failed", e);
+        }
     }
 
     void showFallback(String msg) {
@@ -68,6 +113,22 @@ public class SweetJuiceActivity extends AppCompatActivity {
         });
     }
 
+    public void onPluginRegistered(SweetJuicePlugin plugin) {
+        runOnUiThread(() -> {
+            if (mUIManager != null) {
+                for (SweetJuiceWidgetFactory factory : plugin.getWidgetFactories()) {
+                    mUIManager.registerWidgetFactory(factory);
+                }
+                plugin.onWidgetFactoriesRegistered(mUIManager);
+            }
+        });
+    }
+
+    /**
+     * Triggers a UI re-render from the Go backend.
+     * 
+     * @param json the JSON representation of the UI tree.
+     */
     public void renderUI(final String json) {
         Log.d("SweetJuice", "Activity.renderUI called, length=" + (json != null ? json.length() : 0));
         runOnUiThread(() -> {
@@ -103,6 +164,12 @@ public class SweetJuiceActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         ((SweetJuiceApplication) getApplication()).setActiveActivity(this);
+        try {
+            Juiceapp.handleNativeAction("app:resumed", "[]");
+            Juiceapp.pollNativeEvent();
+        } catch (Exception e) {
+            Log.w("SweetJuice", "onResume event dispatch failed", e);
+        }
     }
 
     @Override

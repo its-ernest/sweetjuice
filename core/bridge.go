@@ -84,6 +84,26 @@ func (b *MobileBridge) PollNativeEvent() string {
 	return globalAppInstance.Events.PollNativeEvent()
 }
 
+func (b *MobileBridge) GetRegisteredPlugins() string {
+	defs := GetRegisteredPlugins()
+	if len(defs) == 0 {
+		return "[]"
+	}
+	items := make([]map[string]string, len(defs))
+	for i, d := range defs {
+		items[i] = map[string]string{
+			"domain":  d.Domain,
+			"javaPkg": d.JavaPkg,
+			"class":   d.Class,
+		}
+	}
+	bytes, err := json.Marshal(items)
+	if err != nil {
+		return "[]"
+	}
+	return string(bytes)
+}
+
 // HandleMessageFromFrontend is a package-level helper exposed to gomobile-generated Java wrappers.
 func HandleMessageFromFrontend(methodKey string, jsonArgsPayload string) string {
 	fmt.Printf("Go: HandleMessageFromFrontend method=%s payload=%s\n", methodKey, jsonArgsPayload)

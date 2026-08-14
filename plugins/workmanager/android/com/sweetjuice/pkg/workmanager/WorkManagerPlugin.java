@@ -44,11 +44,26 @@ public class WorkManagerPlugin implements SweetJuicePlugin {
             if ("enqueueOneTime".equals(action)) {
                 Data inputData = new Data.Builder().putString("task_key", taskKey).build();
 
-                OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(SweetJuiceBackgroundWorker.class)
+                long initialDelayMinutes = args.optLong("initial_delay_minutes", 0);
+                long initialDelaySeconds = args.optLong("initial_delay_seconds", 0);
+                boolean replaceExisting = args.optBoolean("replace_existing", false);
+
+                if (replaceExisting) {
+                    WorkManager.getInstance(mContext).cancelAllWorkByTag(taskKey);
+                }
+
+                OneTimeWorkRequest.Builder builder = new OneTimeWorkRequest.Builder(SweetJuiceBackgroundWorker.class)
                         .setInputData(inputData)
                         .setConstraints(constraints)
-                        .addTag(taskKey)
-                        .build();
+                        .addTag(taskKey);
+
+                if (initialDelaySeconds > 0) {
+                    builder.setInitialDelay(initialDelaySeconds, TimeUnit.SECONDS);
+                } else if (initialDelayMinutes > 0) {
+                    builder.setInitialDelay(initialDelayMinutes, TimeUnit.MINUTES);
+                }
+
+                OneTimeWorkRequest request = builder.build();
 
                 WorkManager.getInstance(mContext).enqueue(request);
                 return "{\"status\":\"enqueued\",\"id\":\"" + request.getId().toString() + "\"}";
@@ -56,7 +71,13 @@ public class WorkManagerPlugin implements SweetJuicePlugin {
 
             if ("enqueuePeriodic".equals(action)) {
                 long intervalMinutes = args.optLong("interval_minutes", 15);
+                boolean replaceExisting = args.optBoolean("replace_existing", false);
+                boolean runImmediate = args.optBoolean("run_immediate", false);
                 Data inputData = new Data.Builder().putString("task_key", taskKey).build();
+
+                if (replaceExisting) {
+                    WorkManager.getInstance(mContext).cancelAllWorkByTag(taskKey);
+                }
 
                 PeriodicWorkRequest request = new PeriodicWorkRequest.Builder(
                         SweetJuiceBackgroundWorker.class, intervalMinutes, TimeUnit.MINUTES)
@@ -66,7 +87,20 @@ public class WorkManagerPlugin implements SweetJuicePlugin {
                         .build();
 
                 WorkManager.getInstance(mContext).enqueue(request);
-                return "{\"status\":\"periodic_enqueued\",\"id\":\"" + request.getId().toString() + "\"}";
+                String response = "{\"status\":\"periodic_enqueued\",\"id\":\"" + request.getId().toString() + "\"}";
+
+                if (runImmediate) {
+                    Data immediateInput = new Data.Builder().putString("task_key", taskKey).build();
+                    OneTimeWorkRequest immediateRequest = new OneTimeWorkRequest.Builder(SweetJuiceBackgroundWorker.class)
+                            .setInputData(immediateInput)
+                            .setConstraints(constraints)
+                            .addTag(taskKey)
+                            .build();
+                    WorkManager.getInstance(mContext).enqueue(immediateRequest);
+                    response = response.replace("}", ",\"immediate_id\":\"" + immediateRequest.getId().toString() + "\"}");
+                }
+
+                return response;
             }
 
             if ("isEnqueued".equals(action)) {

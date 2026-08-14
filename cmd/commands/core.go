@@ -283,7 +283,7 @@ func ExecuteSetup(target string) {
 
 func ManagePlugin(action, pluginRepo string) {
 	if !utils.DirExists(".plugins") || !utils.FileExists("go.mod") {
-		utils.Error("You must execute plugin commands from the root of a wailsm project directory.")
+		utils.Error("You must execute plugin commands from the root of a juice project directory.")
 		os.Exit(1)
 	}
 

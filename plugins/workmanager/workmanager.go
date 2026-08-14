@@ -39,16 +39,20 @@ type TaskFunc func() error
 
 // WorkManagerPlugin manages background tasks via the Android WorkManager API.
 type WorkManagerPlugin struct {
-	app      *core.Application
-	registry map[string]TaskFunc
-	mu       sync.RWMutex
+	app *core.Application
+}
+
+// globalRegistry stores tasks across plugin instances so native callbacks can find them.
+var globalRegistry = struct {
+	mu     sync.RWMutex
+	tasks  map[string]TaskFunc
+}{
+	tasks: make(map[string]TaskFunc),
 }
 
 // NewPlugin creates a new instance of the WorkManager plugin.
 func NewPlugin() *WorkManagerPlugin {
-	return &WorkManagerPlugin{
-		registry: make(map[string]TaskFunc),
-	}
+	return &WorkManagerPlugin{}
 }
 
 // Name returns the plugin name.
@@ -73,9 +77,9 @@ func (p *WorkManagerPlugin) Init(app *core.Application) error {
 			return nil, err
 		}
 
-		p.mu.RLock()
-		task, exists := p.registry[payload.TaskKey]
-		p.mu.RUnlock()
+		globalRegistry.mu.RLock()
+		task, exists := globalRegistry.tasks[payload.TaskKey]
+		globalRegistry.mu.RUnlock()
 
 		if !exists {
 			return nil, fmt.Errorf("task '%s' not found in Go registry", payload.TaskKey)
@@ -94,26 +98,42 @@ func (p *WorkManagerPlugin) Init(app *core.Application) error {
 
 // RegisterTask binds a task name to a Go function.
 func (p *WorkManagerPlugin) RegisterTask(name string, fn TaskFunc) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.registry[name] = fn
+	globalRegistry.mu.Lock()
+	defer globalRegistry.mu.Unlock()
+	globalRegistry.tasks[name] = fn
 }
 
-// EnqueueOneTime schedules a task to run once as soon as possible with optional constraints.
-func (p *WorkManagerPlugin) EnqueueOneTime(taskKey string, constraints *Constraints) (string, error) {
+// EnqueueOneTime schedules a task to run once after an optional initial delay.
+func (p *WorkManagerPlugin) EnqueueOneTime(taskKey string, constraints *Constraints, initialDelayMinutes int) (string, error) {
 	if constraints == nil {
 		c := DefaultConstraints()
 		constraints = &c
 	}
 	payload, _ := json.Marshal(map[string]interface{}{
-		"task_key":    taskKey,
-		"constraints": constraints,
+		"task_key":               taskKey,
+		"constraints":            constraints,
+		"initial_delay_minutes":  initialDelayMinutes,
+	})
+	return core.CallNativePlatform("workmanager:enqueueOneTime", string(payload)), nil
+}
+
+// EnqueueOneTimeWithDelay schedules a task to run once after an initial delay expressed in seconds.
+func (p *WorkManagerPlugin) EnqueueOneTimeWithDelay(taskKey string, constraints *Constraints, initialDelaySeconds int) (string, error) {
+	if constraints == nil {
+		c := DefaultConstraints()
+		constraints = &c
+	}
+	payload, _ := json.Marshal(map[string]interface{}{
+		"task_key":                taskKey,
+		"constraints":             constraints,
+		"initial_delay_seconds":   initialDelaySeconds,
+		"replace_existing":        true,
 	})
 	return core.CallNativePlatform("workmanager:enqueueOneTime", string(payload)), nil
 }
 
 // EnqueuePeriodic schedules a task to run every N minutes with optional constraints.
-func (p *WorkManagerPlugin) EnqueuePeriodic(taskKey string, intervalMinutes int, constraints *Constraints) (string, error) {
+func (p *WorkManagerPlugin) EnqueuePeriodic(taskKey string, intervalMinutes int, constraints *Constraints, replaceExisting bool, runImmediate bool) (string, error) {
 	if constraints == nil {
 		c := DefaultConstraints()
 		constraints = &c
@@ -122,6 +142,8 @@ func (p *WorkManagerPlugin) EnqueuePeriodic(taskKey string, intervalMinutes int,
 		"task_key":         taskKey,
 		"interval_minutes": intervalMinutes,
 		"constraints":      constraints,
+		"replace_existing": replaceExisting,
+		"run_immediate":    runImmediate,
 	})
 	return core.CallNativePlatform("workmanager:enqueuePeriodic", string(payload)), nil
 }

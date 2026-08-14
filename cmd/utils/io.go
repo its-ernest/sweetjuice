@@ -265,3 +265,41 @@ func CopyDirectory(scrDir, destDir string) error {
 		return err
 	})
 }
+
+// CopyAppAssets copies everything from the app_assets directory into the given target directory.
+// If app_assets does not exist, it returns nil without error.
+func CopyAppAssets(targetDir string) error {
+	srcDir := "app_assets"
+	if !DirExists(srcDir) {
+		return nil
+	}
+
+	if !DirExists(targetDir) {
+		if err := os.MkdirAll(targetDir, 0755); err != nil {
+			return fmt.Errorf("failed to create target assets directory %s: %w", targetDir, err)
+		}
+	}
+
+	entries, err := os.ReadDir(srcDir)
+	if err != nil {
+		return fmt.Errorf("failed to read app_assets directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(srcDir, entry.Name())
+		destPath := filepath.Join(targetDir, entry.Name())
+
+		if entry.IsDir() {
+			if err := CopyDirectory(srcPath, destPath); err != nil {
+				return fmt.Errorf("failed to copy app_assets directory %s: %w", entry.Name(), err)
+			}
+		} else {
+			if err := CopyFile(srcPath, destPath); err != nil {
+				return fmt.Errorf("failed to copy app_assets file %s: %w", entry.Name(), err)
+			}
+		}
+	}
+
+	Info(fmt.Sprintf("Copied app_assets into %s", targetDir))
+	return nil
+}

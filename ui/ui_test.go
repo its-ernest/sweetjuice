@@ -15,8 +15,8 @@ func TestWidgetSerialization(t *testing.T) {
 		t.Fatalf("Failed to serialize column: %v", err)
 	}
 
-	if serialized["type"] != "column" {
-		t.Errorf("Expected type 'column', got '%v'", serialized["type"])
+	if serialized["type"] != "mu3:column" {
+		t.Errorf("Expected type 'mu3:column', got '%v'", serialized["type"])
 	}
 
 	// Marshal and unmarshal to check generic JSON representation
@@ -40,8 +40,8 @@ func TestWidgetSerialization(t *testing.T) {
 	}
 
 	first := chList[0].(map[string]interface{})
-	if first["type"] != "text" {
-		t.Errorf("Expected first child to be 'text', got '%v'", first["type"])
+	if first["type"] != "mu3:text" {
+		t.Errorf("Expected first child to be 'mu3:text', got '%v'", first["type"])
 	}
 
 	firstText := first["text"].(string)

@@ -20,7 +20,7 @@ import com.sweetjuice.plugin.SweetJuicePlugin;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import sweetjuice.Sweetjuice;
+import juiceapp.Juiceapp;
 
 public class DeviceStatePlugin implements SweetJuicePlugin {
     private static final String TAG = "DeviceStatePlugin";
@@ -310,7 +310,7 @@ public class DeviceStatePlugin implements SweetJuicePlugin {
         try {
             String stateJson = buildStateJson();
             String payload = "[" + stateJson + "]";
-            Sweetjuice.handleNativeAction("devicestate:changed", payload);
+            Juiceapp.handleNativeAction("devicestate:changed", payload);
         } catch (JSONException e) {
             Log.e(TAG, "Failed to emit device state change", e);
         }
