@@ -12,12 +12,19 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.color.DynamicColors;
+import com.sweetjuice.core.UIManager;
 import com.sweetjuice.plugin.SweetJuicePlugin;
 import com.sweetjuice.plugin.SweetJuiceWidgetFactory;
+import com.sweetjuice.pkg.broadcast.BroadcastPlugin;
 import org.json.JSONArray;
 import org.json.JSONException;
 import juiceapp.Juiceapp;
 
+/**
+ * SweetJuiceActivity is the primary entry point for the user interface.
+ * It initializes the native UI layout, the Go bridge, and manages the 
+ * lifecycle of the application's visual state.
+ */
 public class SweetJuiceActivity extends AppCompatActivity {
 
     private UIManager mUIManager;
@@ -106,6 +113,22 @@ public class SweetJuiceActivity extends AppCompatActivity {
         });
     }
 
+    public void onPluginRegistered(SweetJuicePlugin plugin) {
+        runOnUiThread(() -> {
+            if (mUIManager != null) {
+                for (SweetJuiceWidgetFactory factory : plugin.getWidgetFactories()) {
+                    mUIManager.registerWidgetFactory(factory);
+                }
+                plugin.onWidgetFactoriesRegistered(mUIManager);
+            }
+        });
+    }
+
+    /**
+     * Triggers a UI re-render from the Go backend.
+     * 
+     * @param json the JSON representation of the UI tree.
+     */
     public void renderUI(final String json) {
         Log.d("SweetJuice", "Activity.renderUI called, length=" + (json != null ? json.length() : 0));
         runOnUiThread(() -> {

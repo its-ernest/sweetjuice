@@ -131,6 +131,14 @@ func Card(title string, subtitle string) *ui.WidgetNode {
 	})
 }
 
+func Box(children ...ui.Node) *ui.WidgetNode {
+	return &ui.WidgetNode{
+		BaseNode: ui.BaseNode{Type: "mu3:box", ID: ui.GenID()},
+		Props:    make(map[string]interface{}),
+		Children: children,
+	}
+}
+
 func Root(child ui.Node, backgroundColor string) *ui.RootNode {
 	return ui.Root(child, backgroundColor)
 }

@@ -3,6 +3,7 @@ package com.sweetjuice.app;
 import android.app.Application;
 import android.content.Context;
 import android.util.Log;
+import com.sweetjuice.core.SweetJuiceApp;
 import com.sweetjuice.plugin.SweetJuicePlugin;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -11,7 +12,11 @@ import java.util.HashMap;
 import java.util.Map;
 import juiceapp.Juiceapp;
 
-public class SweetJuiceApplication extends android.app.Application {
+/**
+ * SweetJuiceApplication maintains the global application state, plugin registry,
+ * and handles communication between the native Android platform and the Go backend.
+ */
+public class SweetJuiceApplication extends android.app.Application implements SweetJuiceApp {
     private final Map<String, SweetJuicePlugin> mPlugins = new HashMap<>();
     private SweetJuiceActivity mActiveActivity;
 
@@ -19,8 +24,14 @@ public class SweetJuiceApplication extends android.app.Application {
         mActiveActivity = activity;
     }
 
+    @Override
     public SweetJuiceActivity getActiveActivity() {
         return mActiveActivity;
+    }
+
+    @Override
+    public Class<?> getMainActivityClass() {
+        return SweetJuiceActivity.class;
     }
 
     @Override
@@ -82,6 +93,10 @@ public class SweetJuiceApplication extends android.app.Application {
                     plugin.onAttach(ctx);
                     mPlugins.put(domain, plugin);
                     Log.d("SweetJuice", "Dynamically registered plugin: " + domain + " -> " + fullClassName);
+
+                    if (mActiveActivity != null) {
+                        mActiveActivity.onPluginRegistered(plugin);
+                    }
                 } catch (Exception e) {
                     Log.e("SweetJuice", "Failed to register plugin: " + domain, e);
                 }

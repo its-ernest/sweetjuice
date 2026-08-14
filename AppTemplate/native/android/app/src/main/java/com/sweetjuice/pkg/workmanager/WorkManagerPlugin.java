@@ -21,7 +21,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * WorkManagerPlugin (WorkManager) allows Go to schedule background tasks.
+ * WorkManagerPlugin allows the Go backend to schedule and manage background tasks
+ * using the Android WorkManager API, ensuring reliability across app restarts.
  */
 public class WorkManagerPlugin implements SweetJuicePlugin {
     private Context mContext;
@@ -30,8 +31,8 @@ public class WorkManagerPlugin implements SweetJuicePlugin {
     public String getDomain() { return "workmanager"; }
 
     @Override
-    public void onAttach(Context context) { 
-        this.mContext = context; 
+    public void onAttach(Context context) {
+        this.mContext = context.getApplicationContext();
     }
 
     @Override
@@ -39,7 +40,7 @@ public class WorkManagerPlugin implements SweetJuicePlugin {
         try {
             JSONObject args = new JSONObject(jsonArgsPayload);
             String taskKey = args.optString("task_key", "default_task");
-            
+
             Constraints constraints = parseConstraints(args.optJSONObject("constraints"));
 
             if ("enqueueOneTime".equals(action)) {
@@ -58,6 +59,7 @@ public class WorkManagerPlugin implements SweetJuicePlugin {
             if ("enqueuePeriodic".equals(action)) {
                 long intervalMinutes = args.optLong("interval_minutes", 15);
                 boolean replaceExisting = args.optBoolean("replace_existing", false);
+                boolean runImmediate = args.optBoolean("run_immediate", false);
                 Data inputData = new Data.Builder().putString("task_key", taskKey).build();
 
                 PeriodicWorkRequest request = new PeriodicWorkRequest.Builder(
@@ -68,10 +70,20 @@ public class WorkManagerPlugin implements SweetJuicePlugin {
                         .build();
 
                 ExistingPeriodicWorkPolicy policy = replaceExisting
-                        ? ExistingPeriodicWorkPolicy.REPLACE
+                        ? ExistingPeriodicWorkPolicy.UPDATE
                         : ExistingPeriodicWorkPolicy.KEEP;
 
                 WorkManager.getInstance(mContext).enqueueUniquePeriodicWork(taskKey, policy, request);
+
+                if (runImmediate) {
+                    OneTimeWorkRequest immediateRequest = new OneTimeWorkRequest.Builder(SweetJuiceBackgroundWorker.class)
+                            .setInputData(inputData)
+                            .setConstraints(constraints)
+                            .addTag(taskKey)
+                            .build();
+                    WorkManager.getInstance(mContext).enqueue(immediateRequest);
+                }
+
                 return "{\"status\":\"periodic_enqueued\",\"id\":\"" + request.getId().toString() + "\"}";
             }
 

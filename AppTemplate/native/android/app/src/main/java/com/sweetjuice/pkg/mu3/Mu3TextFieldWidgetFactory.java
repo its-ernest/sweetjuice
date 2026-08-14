@@ -10,6 +10,7 @@ import org.json.JSONObject;
 public class Mu3TextFieldWidgetFactory implements SweetJuiceWidgetFactory {
 
     private String prop(JSONObject node, String key) {
+        if (node.has(key)) return node.optString(key, "");
         JSONObject props = node.optJSONObject("props");
         if (props != null) return props.optString(key, "");
         return "";

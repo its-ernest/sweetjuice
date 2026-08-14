@@ -3,9 +3,12 @@ package juiceapp
 import (
 	"fmt"
 
+	"sweetjuice/plugins/custom"
+
 	"github.com/sweet-juice/sweetjuice/app"
 	apppkg "github.com/sweet-juice/sweetjuice/plugins/app"
 	"github.com/sweet-juice/sweetjuice/plugins/biometric"
+	"github.com/sweet-juice/sweetjuice/plugins/broadcast"
 	"github.com/sweet-juice/sweetjuice/plugins/calls"
 	"github.com/sweet-juice/sweetjuice/plugins/daemon"
 	"github.com/sweet-juice/sweetjuice/plugins/datadir"
@@ -17,9 +20,11 @@ import (
 	"github.com/sweet-juice/sweetjuice/plugins/logger"
 	"github.com/sweet-juice/sweetjuice/plugins/mu3"
 	"github.com/sweet-juice/sweetjuice/plugins/notification"
+	"github.com/sweet-juice/sweetjuice/plugins/notification_listener"
 	"github.com/sweet-juice/sweetjuice/plugins/permission"
 	"github.com/sweet-juice/sweetjuice/plugins/sms"
 	"github.com/sweet-juice/sweetjuice/plugins/special"
+	"github.com/sweet-juice/sweetjuice/plugins/system"
 	"github.com/sweet-juice/sweetjuice/plugins/workmanager"
 )
 
@@ -34,6 +39,7 @@ func registerPluginDefinitions() {
 	RegisterPlugin("sms", "com.sweetjuice.pkg.sms", "SmsPlugin")
 	RegisterPlugin("calls", "com.sweetjuice.pkg.calls", "CallsPlugin")
 	RegisterPlugin("biometric", "com.sweetjuice.pkg.biometric", "BiometricPlugin")
+	RegisterPlugin("broadcast", "com.sweetjuice.pkg.broadcast", "BroadcastPlugin")
 	RegisterPlugin("daemon", "com.sweetjuice.pkg.daemon", "DaemonPlugin")
 	RegisterPlugin("datadir", "com.sweetjuice.pkg.datadir", "DataDirPlugin")
 	RegisterPlugin("datastore", "com.sweetjuice.pkg.datastore", "DataStorePlugin")
@@ -42,6 +48,8 @@ func registerPluginDefinitions() {
 	RegisterPlugin("filepicker", "com.sweetjuice.pkg.filepicker", "FilePickerPlugin")
 	RegisterPlugin("logger", "com.sweetjuice.pkg.logger", "LoggerPlugin")
 	RegisterPlugin("notification", "com.sweetjuice.pkg.notifications", "NotificationPlugin")
+	RegisterPlugin("system", "com.sweetjuice.pkg.system", "SystemPlugin")
+	RegisterPlugin("custom", "com.custompackage", "CustomPlugin")
 	RegisterPlugin("workmanager", "com.sweetjuice.pkg.workmanager", "WorkManagerPlugin")
 }
 
@@ -62,6 +70,7 @@ func initPlugins() {
 	sms.NewPlugin().Init(a)
 	calls.NewPlugin().Init(a)
 	biometric.NewPlugin().Init(a)
+	broadcast.NewPlugin().Init(a)
 	daemon.NewPlugin().Init(a)
 	datadir.NewPlugin().Init(a)
 	datastore.NewPlugin().Init(a)
@@ -70,5 +79,8 @@ func initPlugins() {
 	filepicker.NewPlugin().Init(a)
 	logger.NewPlugin("sweetjuice").Init(a)
 	notification.NewPlugin().Init(a)
+	notification_listener.NewPlugin().Init(a)
+	custom.NewPlugin().Init(a)
+	system.NewPlugin().Init(a)
 	workmanager.NewPlugin().Init(a)
 }

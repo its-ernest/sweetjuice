@@ -14,6 +14,7 @@ const (
 	Accessibility    SpecialType = "accessibility"
 	AllFilesAccess   SpecialType = "all_files_access"
 	BatteryExemption SpecialType = "battery_exemption"
+	NotificationAccess SpecialType = "notification_access"
 )
 
 // SpecialPlugin handles special Android permissions that require system-settings intents.
@@ -84,6 +85,7 @@ func (p *SpecialPlugin) Check(perm SpecialType) (bool, error) {
 func RequestAccessibility() (string, error)       { return NewPlugin().Request(Accessibility) }
 func RequestAllFilesAccess() (string, error)      { return NewPlugin().Request(AllFilesAccess) }
 func RequestBatteryExemption() (string, error)    { return NewPlugin().Request(BatteryExemption) }
+func RequestNotificationAccess() (string, error)  { return NewPlugin().Request(NotificationAccess) }
 
 func RequestAppSettings() (string, error) {
 	payload, _ := json.Marshal(map[string]string{
@@ -99,6 +101,7 @@ func RequestAppSettings() (string, error) {
 func CheckAccessibility() (bool, error)      { return NewPlugin().Check(Accessibility) }
 func CheckAllFilesAccess() (bool, error)     { return NewPlugin().Check(AllFilesAccess) }
 func CheckBatteryExemption() (bool, error)   { return NewPlugin().Check(BatteryExemption) }
+func CheckNotificationAccess() (bool, error) { return NewPlugin().Check(NotificationAccess) }
 
 func parsePluginError(result string) error {
 	var generic map[string]interface{}

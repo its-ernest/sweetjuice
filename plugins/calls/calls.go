@@ -72,6 +72,11 @@ func (p *CallsPlugin) GetRecent(limit int) (CallLog, error) {
 	return log, nil
 }
 
+// GetLast is an alias for GetRecent.
+func (p *CallsPlugin) GetLast(limit int) (CallLog, error) {
+	return p.GetRecent(limit)
+}
+
 // GetAll fetches the entire call log.
 func (p *CallsPlugin) GetAll() (CallLog, error) {
 	var log CallLog

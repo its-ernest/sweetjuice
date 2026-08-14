@@ -43,6 +43,14 @@ func RegisterPlugin(domain, javaPkg, className string) {
 		JavaPkg: javaPkg,
 		Class:   className,
 	})
+
+	// Sync with native side immediately to avoid race conditions during StartApplication
+	payload, _ := json.Marshal([]map[string]string{{
+		"domain":  domain,
+		"javaPkg": javaPkg,
+		"class":   className,
+	}})
+	core.CallNativePlatform("plugin:register", string(payload))
 }
 
 // GetRegisteredPlugins returns JSON array of all plugins registered from Go.

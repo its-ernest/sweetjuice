@@ -1,14 +1,23 @@
 package com.sweetjuice.pkg.mu3;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import com.google.android.material.card.MaterialCardView;
+import com.sweetjuice.core.UIManager;
 import com.sweetjuice.plugin.SweetJuiceWidgetFactory;
+import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONException;
 
 public class Mu3CardWidgetFactory implements SweetJuiceWidgetFactory {
+    private UIManager mUIManager;
+
+    public void setUIManager(UIManager uiManager) {
+        this.mUIManager = uiManager;
+    }
 
     private String prop(JSONObject node, String key) {
         JSONObject props = node.optJSONObject("props");

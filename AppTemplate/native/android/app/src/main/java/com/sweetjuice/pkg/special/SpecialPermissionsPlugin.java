@@ -78,6 +78,8 @@ public class SpecialPermissionsPlugin implements SweetJuicePlugin {
         } else if ("app_settings".equals(type)) {
             intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
             intent.setData(android.net.Uri.parse("package:" + mContext.getPackageName()));
+        } else if ("notification_access".equals(type)) {
+            intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
         } else {
             return errorJson("Unknown special permission type: " + type);
         }
@@ -94,6 +96,8 @@ public class SpecialPermissionsPlugin implements SweetJuicePlugin {
             granted = hasAllFilesAccess();
         } else if ("battery_exemption".equals(type)) {
             granted = hasBatteryExemption();
+        } else if ("notification_access".equals(type)) {
+            granted = hasNotificationAccess();
         } else {
             return errorJson("Unknown special permission type: " + type);
         }
@@ -129,6 +133,15 @@ public class SpecialPermissionsPlugin implements SweetJuicePlugin {
             return pm != null && pm.isIgnoringBatteryOptimizations(mContext.getPackageName());
         }
         return true;
+    }
+
+    private boolean hasNotificationAccess() {
+        String enabledListeners = Settings.Secure.getString(
+                mContext.getContentResolver(),
+                "enabled_notification_listeners");
+        if (enabledListeners == null) return false;
+        String ourListener = mContext.getPackageName() + "/com.sweetjuice.pkg.notifications.SweetJuiceNotificationListener";
+        return enabledListeners.contains(ourListener);
     }
 
     private String okJson(String status) {

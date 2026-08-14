@@ -5,6 +5,7 @@ package permission
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/sweet-juice/sweetjuice/core"
 )
@@ -20,6 +21,16 @@ func NewPlugin() *PermissionPlugin {
 	return &PermissionPlugin{}
 }
 
+type PermissionResult struct {
+	Permission string `json:"permission"`
+	Granted    bool   `json:"granted"`
+}
+
+type PermissionHandler func(PermissionResult)
+
+var globalHandlers []PermissionHandler
+var handlersMu sync.RWMutex
+
 // Init initializes the plugin with the Sweet Juice application context and registers
 // the "permissions:result" native callback handler.
 func (p *PermissionPlugin) Init(app *core.Application) error {
@@ -30,18 +41,36 @@ func (p *PermissionPlugin) Init(app *core.Application) error {
 			return nil, fmt.Errorf("no arguments provided")
 		}
 
-		var results []map[string]interface{}
-		if err := json.Unmarshal(args[0], &results); err != nil {
+		var result PermissionResult
+		if err := json.Unmarshal(args[0], &result); err != nil {
+			fmt.Printf("permission: failed to unmarshal result: %v (raw: %s)\n", err, string(args[0]))
 			return nil, err
 		}
 
-		for _, result := range results {
-			app.Events.Emit("permissions:changed", result)
+		fmt.Printf("permission: result received: %s granted=%v\n", result.Permission, result.Granted)
+		app.Events.Emit("permissions:changed", result)
+
+		handlersMu.RLock()
+		for _, h := range globalHandlers {
+			go h(result)
 		}
+		handlersMu.RUnlock()
+
 		return map[string]string{"status": "processed"}, nil
 	})
 
 	return nil
+}
+
+// OnResult registers a callback for permission results.
+func (p *PermissionPlugin) OnResult(h PermissionHandler) {
+	handlersMu.Lock()
+	defer handlersMu.Unlock()
+	globalHandlers = append(globalHandlers, h)
+}
+
+func OnResult(h PermissionHandler) {
+	NewPlugin().OnResult(h)
 }
 
 // Check queries the status of a specific permission synchronously.

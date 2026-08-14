@@ -103,21 +103,37 @@ func (p *WorkManagerPlugin) RegisterTask(name string, fn TaskFunc) {
 	globalRegistry.tasks[name] = fn
 }
 
-// EnqueueOneTime schedules a task to run once as soon as possible with optional constraints.
-func (p *WorkManagerPlugin) EnqueueOneTime(taskKey string, constraints *Constraints) (string, error) {
+// EnqueueOneTime schedules a task to run once after an optional initial delay.
+func (p *WorkManagerPlugin) EnqueueOneTime(taskKey string, constraints *Constraints, initialDelayMinutes int) (string, error) {
 	if constraints == nil {
 		c := DefaultConstraints()
 		constraints = &c
 	}
 	payload, _ := json.Marshal(map[string]interface{}{
-		"task_key":    taskKey,
-		"constraints": constraints,
+		"task_key":               taskKey,
+		"constraints":            constraints,
+		"initial_delay_minutes":  initialDelayMinutes,
+	})
+	return core.CallNativePlatform("workmanager:enqueueOneTime", string(payload)), nil
+}
+
+// EnqueueOneTimeWithDelay schedules a task to run once after an initial delay expressed in seconds.
+func (p *WorkManagerPlugin) EnqueueOneTimeWithDelay(taskKey string, constraints *Constraints, initialDelaySeconds int) (string, error) {
+	if constraints == nil {
+		c := DefaultConstraints()
+		constraints = &c
+	}
+	payload, _ := json.Marshal(map[string]interface{}{
+		"task_key":                taskKey,
+		"constraints":             constraints,
+		"initial_delay_seconds":   initialDelaySeconds,
+		"replace_existing":        true,
 	})
 	return core.CallNativePlatform("workmanager:enqueueOneTime", string(payload)), nil
 }
 
 // EnqueuePeriodic schedules a task to run every N minutes with optional constraints.
-func (p *WorkManagerPlugin) EnqueuePeriodic(taskKey string, intervalMinutes int, constraints *Constraints, replaceExisting bool) (string, error) {
+func (p *WorkManagerPlugin) EnqueuePeriodic(taskKey string, intervalMinutes int, constraints *Constraints, replaceExisting bool, runImmediate bool) (string, error) {
 	if constraints == nil {
 		c := DefaultConstraints()
 		constraints = &c
@@ -127,6 +143,7 @@ func (p *WorkManagerPlugin) EnqueuePeriodic(taskKey string, intervalMinutes int,
 		"interval_minutes": intervalMinutes,
 		"constraints":      constraints,
 		"replace_existing": replaceExisting,
+		"run_immediate":    runImmediate,
 	})
 	return core.CallNativePlatform("workmanager:enqueuePeriodic", string(payload)), nil
 }

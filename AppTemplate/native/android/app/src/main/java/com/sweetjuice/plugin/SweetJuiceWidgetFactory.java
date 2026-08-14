@@ -6,25 +6,36 @@ import android.view.ViewGroup;
 import org.json.JSONObject;
 
 /**
- * SweetJuiceWidgetFactory is the extension point for third-party widget plugins.
- *
- * A plugin registers a factory for a custom widget type (e.g. "mu3:card").
- * During reconciliation, UIManager delegates unknown types to the matching factory.
+ * SweetJuiceWidgetFactory is the extension point for custom native UI components.
+ * 
+ * A plugin can register factories for custom widget types (e.g., "mu3:card").
+ * When the UIManager encounters a node with a matching type, it delegates
+ * view creation and updates to this factory.
  */
 public interface SweetJuiceWidgetFactory {
 
     /**
-     * Returns the widget type identifier (e.g. "mu3:card").
+     * Returns the unique widget type identifier.
+     * 
+     * @return the type string (e.g., "mu3:box").
      */
     String getType();
 
     /**
-     * Create a new native view for the given widget node.
+     * Instantiates a new native Android view for the given widget node.
+     * 
+     * @param ctx the Android context (usually an Activity).
+     * @param node the JSON representation of the widget node.
+     * @param parent the parent view group.
+     * @return a new {@link View} instance.
      */
     View createView(Context ctx, JSONObject node, ViewGroup parent);
 
     /**
-     * Update an existing view to match the new node properties.
+     * Updates an existing native view with new properties from the Go backend.
+     * 
+     * @param view the existing native view to update.
+     * @param node the new JSON representation of the widget node.
      */
     void updateView(View view, JSONObject node);
 }

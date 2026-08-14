@@ -49,6 +49,22 @@ Creates a new SMS plugin instance.
 
 ---
 
+### `(*SmsPlugin).GetRecent(limit int) (SmsFolder, error)`
+
+Retrieves the most recent SMS messages.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `limit` | `int` | Maximum number of records to return |
+
+---
+
+### `(*SmsPlugin).GetLast(limit int) (SmsFolder, error)`
+
+An alias for `GetRecent(limit)`.
+
+---
+
 ### `(*SmsPlugin).GetInbox() (SmsFolder, error)`
 
 Retrieves inbox messages.

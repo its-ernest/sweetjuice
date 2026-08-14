@@ -3,11 +3,12 @@ package com.sweetjuice.plugin;
 import android.content.Context;
 import android.content.Intent;
 import android.view.View;
-import com.sweetjuice.app.UIManager;
+import com.sweetjuice.core.UIManager;
 import com.sweetjuice.plugin.SweetJuiceWidgetFactory;
 
 /**
  * SweetJuicePlugin is the base interface for all native Android extensions.
+ * Plugins handle actions from Go and can provide custom widget factories.
  */
 public interface SweetJuicePlugin {
     

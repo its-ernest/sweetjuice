@@ -56,7 +56,7 @@ bin/
 /AppTemplate/native/android/.externalNativeBuild
 /AppTemplate/native/android/.cxx
 /AppTemplate/native/android/local.properties
-#/AppTemplate/native/android/gradle
+/AppTemplate/native/android/app/libs
 
 # Temporary files
 temps/

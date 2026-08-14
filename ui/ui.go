@@ -21,7 +21,7 @@ type BaseNode struct {
 	Events []string
 }
 
-func genID() string {
+func GenID() string {
 	b := make([]byte, 4)
 	rand.Read(b)
 	return fmt.Sprintf("n_%x", b)
@@ -44,7 +44,7 @@ type TextNode struct {
 
 func Text(value string) *TextNode {
 	return &TextNode{
-		BaseNode: BaseNode{Type: "mu3:text", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:text", ID: GenID()},
 		Value:    value,
 	}
 }
@@ -82,7 +82,7 @@ type ButtonNode struct {
 
 func Button(text string) *ButtonNode {
 	return &ButtonNode{
-		BaseNode: BaseNode{Type: "mu3:button", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:button", ID: GenID()},
 		Text:     text,
 	}
 }
@@ -126,7 +126,7 @@ type TextFieldNode struct {
 
 func TextField(placeholder string) *TextFieldNode {
 	return &TextFieldNode{
-		BaseNode:    BaseNode{Type: "mu3:textfield", ID: genID()},
+		BaseNode:    BaseNode{Type: "mu3:textfield", ID: GenID()},
 		Placeholder: placeholder,
 	}
 }
@@ -175,14 +175,14 @@ type StackNode struct {
 
 func VStack(children ...Node) *StackNode {
 	return &StackNode{
-		BaseNode: BaseNode{Type: "column", ID: genID()},
+		BaseNode: BaseNode{Type: "column", ID: GenID()},
 		Children: children,
 	}
 }
 
 func HStack(children ...Node) *StackNode {
 	return &StackNode{
-		BaseNode: BaseNode{Type: "row", ID: genID()},
+		BaseNode: BaseNode{Type: "row", ID: GenID()},
 		Children: children,
 	}
 }
@@ -224,7 +224,7 @@ type CardNode struct {
 func Card(children ...Node) *CardNode {
 	return &CardNode{
 		StackNode: StackNode{
-			BaseNode: BaseNode{Type: "mu3:card", ID: genID()},
+			BaseNode: BaseNode{Type: "mu3:card", ID: GenID()},
 			Children: children,
 		},
 	}
@@ -249,7 +249,7 @@ type SpacerNode struct {
 
 func Spacer() *SpacerNode {
 	return &SpacerNode{
-		BaseNode: BaseNode{Type: "spacer", ID: genID()},
+		BaseNode: BaseNode{Type: "spacer", ID: GenID()},
 	}
 }
 
@@ -286,7 +286,7 @@ type RootNode struct {
 
 func Root(child Node, backgroundColor string) *RootNode {
 	return &RootNode{
-		BaseNode:        BaseNode{Type: "root", ID: genID()},
+		BaseNode:        BaseNode{Type: "root", ID: GenID()},
 		Child:           child,
 		BackgroundColor: backgroundColor,
 	}
@@ -310,7 +310,8 @@ func (n *RootNode) Serialize() (map[string]interface{}, error) {
 // Widget Node (for third-party widget plugins)
 type WidgetNode struct {
 	BaseNode
-	Props map[string]interface{}
+	Props    map[string]interface{}
+	Children []Node
 }
 
 func Widget(widgetType string, props map[string]interface{}) *WidgetNode {
@@ -318,7 +319,7 @@ func Widget(widgetType string, props map[string]interface{}) *WidgetNode {
 		props = make(map[string]interface{})
 	}
 	return &WidgetNode{
-		BaseNode: BaseNode{Type: widgetType, ID: genID()},
+		BaseNode: BaseNode{Type: widgetType, ID: GenID()},
 		Props:    props,
 	}
 }
@@ -358,17 +359,26 @@ func (n *WidgetNode) OnChanged(h func(string)) *WidgetNode {
 }
 
 func (n *WidgetNode) Serialize() (map[string]interface{}, error) {
+	var children []map[string]interface{}
+	if len(n.Children) > 0 {
+		children = make([]map[string]interface{}, len(n.Children))
+		for i, c := range n.Children {
+			children[i], _ = c.Serialize()
+		}
+	}
+
 	return map[string]interface{}{
-		"type":   n.Type,
-		"id":     n.BaseNode.ID,
-		"props":  n.Props,
-		"events": n.Events,
+		"type":     n.Type,
+		"id":       n.BaseNode.ID,
+		"props":    n.Props,
+		"children": children,
+		"events":   n.Events,
 	}, nil
 }
 
 func TextButton(text string) *TextButtonNode {
 	return &TextButtonNode{
-		BaseNode: BaseNode{Type: "mu3:text-button", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:text-button", ID: GenID()},
 		Text:     text,
 	}
 }
@@ -405,7 +415,7 @@ func (n *TextButtonNode) Serialize() (map[string]interface{}, error) {
 
 func OutlinedButton(text string) *OutlinedButtonNode {
 	return &OutlinedButtonNode{
-		BaseNode: BaseNode{Type: "mu3:outlined-button", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:outlined-button", ID: GenID()},
 		Text:     text,
 	}
 }
@@ -442,7 +452,7 @@ func (n *OutlinedButtonNode) Serialize() (map[string]interface{}, error) {
 
 func TonalButton(text string) *TonalButtonNode {
 	return &TonalButtonNode{
-		BaseNode: BaseNode{Type: "mu3:tonal-button", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:tonal-button", ID: GenID()},
 		Text:     text,
 	}
 }
@@ -479,7 +489,7 @@ func (n *TonalButtonNode) Serialize() (map[string]interface{}, error) {
 
 func ElevatedButton(text string) *ElevatedButtonNode {
 	return &ElevatedButtonNode{
-		BaseNode: BaseNode{Type: "mu3:elevated-button", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:elevated-button", ID: GenID()},
 		Text:     text,
 	}
 }
@@ -516,7 +526,7 @@ func (n *ElevatedButtonNode) Serialize() (map[string]interface{}, error) {
 
 func IconButton(name string) *IconButtonNode {
 	return &IconButtonNode{
-		BaseNode: BaseNode{Type: "mu3:icon-button", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:icon-button", ID: GenID()},
 		Name:     name,
 	}
 }
@@ -553,13 +563,13 @@ func (n *IconButtonNode) Serialize() (map[string]interface{}, error) {
 
 func FAB() *FabNode {
 	return &FabNode{
-		BaseNode: BaseNode{Type: "mu3:fab", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:fab", ID: GenID()},
 	}
 }
 
 func ExtendedFAB(text string) *FabNode {
 	return &FabNode{
-		BaseNode: BaseNode{Type: "mu3:extended-fab", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:extended-fab", ID: GenID()},
 		Text:     text,
 	}
 }
@@ -596,7 +606,7 @@ func (n *FabNode) Serialize() (map[string]interface{}, error) {
 
 func SegmentedButton(options []string, selected string) *SegmentedButtonNode {
 	return &SegmentedButtonNode{
-		BaseNode: BaseNode{Type: "mu3:segmented-button", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:segmented-button", ID: GenID()},
 		Options:  options,
 		Selected: selected,
 	}
@@ -641,7 +651,7 @@ func (n *SegmentedButtonNode) Serialize() (map[string]interface{}, error) {
 
 func ButtonGroup(children ...Node) *ButtonGroupNode {
 	return &ButtonGroupNode{
-		BaseNode: BaseNode{Type: "mu3:button-group", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:button-group", ID: GenID()},
 		Children: children,
 	}
 }
@@ -683,7 +693,7 @@ type ImageNode struct {
 
 func Image(src string) *ImageNode {
 	return &ImageNode{
-		BaseNode: BaseNode{Type: "mu3:image", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:image", ID: GenID()},
 		Src:      src,
 	}
 }
@@ -725,7 +735,7 @@ type VideoNode struct {
 
 func Video(src string) *VideoNode {
 	return &VideoNode{
-		BaseNode: BaseNode{Type: "mu3:video", ID: genID()},
+		BaseNode: BaseNode{Type: "mu3:video", ID: GenID()},
 		Src:      src,
 	}
 }
@@ -769,7 +779,7 @@ type DialogNode struct {
 
 func Dialog(title, message, buttonText string) *DialogNode {
 	return &DialogNode{
-		BaseNode:   BaseNode{Type: "ui:dialog", ID: genID()},
+		BaseNode:   BaseNode{Type: "ui:dialog", ID: GenID()},
 		Title:      title,
 		Message:    message,
 		ButtonText: buttonText,

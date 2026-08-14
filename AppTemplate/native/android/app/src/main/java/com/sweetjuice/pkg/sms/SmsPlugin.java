@@ -11,6 +11,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ * SmsPlugin provides read-only access to device SMS messages across various folders.
+ */
 public class SmsPlugin implements SweetJuicePlugin {
 
     private static final String TAG = "SmsPlugin";
@@ -27,14 +30,19 @@ public class SmsPlugin implements SweetJuicePlugin {
     @Override
     public String handleAction(String action, String jsonArgsPayload) {
         try {
+            JSONObject args = new JSONObject(jsonArgsPayload);
+            if ("getRecent".equals(action) || "getLast".equals(action)) {
+                int limit = args.optInt("limit", 100);
+                return getRecentSms(limit);
+            }
             if ("getInbox".equals(action)) {
-                return getSmsFolder(Telephony.Sms.Inbox.CONTENT_URI, "inbox");
+                return getSmsFolder(Telephony.Sms.Inbox.CONTENT_URI, "inbox", -1);
             }
             if ("getSent".equals(action)) {
-                return getSmsFolder(Telephony.Sms.Sent.CONTENT_URI, "sent");
+                return getSmsFolder(Telephony.Sms.Sent.CONTENT_URI, "sent", -1);
             }
             if ("getDrafts".equals(action)) {
-                return getSmsFolder(Telephony.Sms.Draft.CONTENT_URI, "draft");
+                return getSmsFolder(Telephony.Sms.Draft.CONTENT_URI, "draft", -1);
             }
             if ("getAll".equals(action)) {
                 return getAllSms();
@@ -45,17 +53,24 @@ public class SmsPlugin implements SweetJuicePlugin {
         }
     }
 
-    private String getSmsFolder(Uri uri, String folder) {
+    private String getRecentSms(int limit) {
+        return getSmsFolder(Telephony.Sms.CONTENT_URI, "all", limit);
+    }
+
+    private String getSmsFolder(Uri uri, String folder, int limit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             String defaultSmsPackage = Telephony.Sms.getDefaultSmsPackage(mContext);
             if (defaultSmsPackage != null && !defaultSmsPackage.equals(mContext.getPackageName())) {
-                return errorJson("Not default SMS app");
+                // Warning only, try to read anyway as we might have READ_SMS permission
+                Log.w(TAG, "Not default SMS app, might fail to read if no permission");
             }
         }
 
         Cursor cursor = null;
         try {
-            cursor = mContext.getContentResolver().query(uri, null, null, null, "date DESC LIMIT 100");
+            String sortOrder = "date DESC";
+
+            cursor = mContext.getContentResolver().query(uri, null, null, null, sortOrder);
             if (cursor == null) {
                 return folderJson(folder, 0, new JSONArray());
             }
@@ -64,12 +79,31 @@ public class SmsPlugin implements SweetJuicePlugin {
             int count = 0;
 
             while (cursor.moveToNext()) {
+                if (limit > 0 && count >= limit) {
+                    break;
+                }
                 try {
                     JSONObject msg = new JSONObject();
                     msg.put("id", cursor.getLong(cursor.getColumnIndexOrThrow("_id")));
                     msg.put("address", cursor.getString(cursor.getColumnIndexOrThrow("address")));
                     msg.put("body", cursor.getString(cursor.getColumnIndexOrThrow("body")));
-                    msg.put("type", folder);
+                    
+                    // If uri is generic CONTENT_URI, we might want to get the folder from the type column
+                    String typeStr = folder;
+                    if ("all".equals(folder)) {
+                        int type = cursor.getInt(cursor.getColumnIndexOrThrow("type"));
+                        switch (type) {
+                            case Telephony.Sms.MESSAGE_TYPE_INBOX: typeStr = "inbox"; break;
+                            case Telephony.Sms.MESSAGE_TYPE_SENT: typeStr = "sent"; break;
+                            case Telephony.Sms.MESSAGE_TYPE_DRAFT: typeStr = "draft"; break;
+                            case Telephony.Sms.MESSAGE_TYPE_OUTBOX: typeStr = "outbox"; break;
+                            case Telephony.Sms.MESSAGE_TYPE_FAILED: typeStr = "failed"; break;
+                            case Telephony.Sms.MESSAGE_TYPE_QUEUED: typeStr = "queued"; break;
+                            default: typeStr = "unknown";
+                        }
+                    }
+
+                    msg.put("type", typeStr);
                     msg.put("timestamp", cursor.getLong(cursor.getColumnIndexOrThrow("date")));
                     msg.put("read", cursor.getInt(cursor.getColumnIndexOrThrow("read")) == 1);
                     messages.put(msg);
@@ -90,37 +124,7 @@ public class SmsPlugin implements SweetJuicePlugin {
     }
 
     private String getAllSms() {
-        JSONArray allMessages = new JSONArray();
-        int totalCount = 0;
-
-        String[] folders = {"inbox", "sent", "draft"};
-        Uri[] uris = {Telephony.Sms.Inbox.CONTENT_URI, Telephony.Sms.Sent.CONTENT_URI, Telephony.Sms.Draft.CONTENT_URI};
-
-        for (int i = 0; i < folders.length; i++) {
-            String result = getSmsFolder(uris[i], folders[i]);
-            try {
-                JSONObject obj = new JSONObject(result);
-                if (obj.has("messages")) {
-                    JSONArray msgs = obj.getJSONArray("messages");
-                    for (int j = 0; j < msgs.length(); j++) {
-                        allMessages.put(msgs.getJSONObject(j));
-                    }
-                    totalCount += obj.optInt("count", 0);
-                }
-            } catch (JSONException e) {
-                Log.w(TAG, "Failed to merge SMS folder: " + folders[i], e);
-            }
-        }
-
-        try {
-            JSONObject result = new JSONObject();
-            result.put("folder", "all");
-            result.put("count", totalCount);
-            result.put("messages", allMessages);
-            return result.toString();
-        } catch (JSONException e) {
-            return errorJson(e.getMessage());
-        }
+        return getSmsFolder(Telephony.Sms.CONTENT_URI, "all", -1);
     }
 
     private String folderJson(String folder, int count, JSONArray messages) {

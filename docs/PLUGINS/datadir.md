@@ -19,14 +19,30 @@ import (
 )
 
 func logDirs() {
-    dirs, err := datadir.GetDirs()
+    dirs, err := datadir.NewPlugin().GetDirs()
     if err != nil {
         fmt.Println("Error:", err)
         return
     }
-    fmt.Println("Files dir:", dirs.FilesDir)
-    fmt.Println("Cache dir:", dirs.CacheDir)
-    fmt.Println("External files:", dirs.ExternalFilesDir)
+    fmt.Println("Files dir:", dirs.Files)
+    fmt.Println("Cache dir:", dirs.Cache)
+    fmt.Println("External files:", dirs.ExternalFiles)
+}
+
+func fileOps() {
+    plugin := datadir.NewPlugin()
+    
+    // Write a file
+    err := plugin.WriteFile("test.txt", "Hello SweetJuice")
+    
+    // Read a file
+    content, err := plugin.ReadFile("test.txt")
+    
+    // Check existence
+    exists, err := plugin.FileExists("test.txt")
+    
+    // Delete
+    err = plugin.DeleteFile("test.txt")
 }
 ```
 
@@ -48,12 +64,36 @@ Returns the application directory paths.
 
 ```go
 type AppDirs struct {
-    FilesDir        string // Internal files directory
-    CacheDir        string // Internal cache directory
-    ExternalFilesDir string // External files directory (if available)
-    ExternalCacheDir string // External cache directory (if available)
+    Files         string // Internal files directory
+    Cache         string // Internal cache directory
+    ExternalFiles string // External files directory (if available)
+    ExternalCache string // External cache directory (if available)
 }
 ```
+
+---
+
+### `(*DataDirPlugin).ReadFile(path string) (string, error)`
+
+Reads a file from the app's internal files directory.
+
+---
+
+### `(*DataDirPlugin).WriteFile(path string, content string) error`
+
+Writes content to a file in the app's internal files directory.
+
+---
+
+### `(*DataDirPlugin).FileExists(path string) (bool, error)`
+
+Checks whether a file exists in the app's internal files directory.
+
+---
+
+### `(*DataDirPlugin).DeleteFile(path string) error`
+
+Deletes a file from the app's internal files directory.
 
 ---
 

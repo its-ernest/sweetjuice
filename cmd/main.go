@@ -27,7 +27,7 @@ func main() {
 		commands.ExecuteRefresh(os.Args[2])
 	case "--build":
 		if len(os.Args) < 4 {
-			utils.Error("Missing arguments. Usage: wailsm --build <platform> <debug|release>")
+			utils.Error("Missing arguments. Usage: juice --build <platform> <debug|release>")
 			os.Exit(1)
 		}
 		commands.ExecuteBuild(os.Args[2], os.Args[3])

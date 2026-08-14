@@ -72,9 +72,13 @@ Checks whether the given special permission is currently granted.
 |----------|-------------|
 | `RequestAccessibility() (string, error)` | Opens Accessibility settings |
 | `RequestAllFilesAccess() (string, error)` | Opens All Files Access settings (Android 11+) |
+| `RequestBatteryExemption() (string, error)` | Opens battery optimization exemption dialog |
+| `RequestNotificationAccess() (string, error)` | Opens notification access settings |
 | `RequestAppSettings() (string, error)` | Opens app-specific system settings |
 | `CheckAccessibility() (bool, error)` | Checks if Accessibility is granted |
 | `CheckAllFilesAccess() (bool, error)` | Checks if All Files Access is granted |
+| `CheckBatteryExemption() (bool, error)` | Checks if battery exemption is granted |
+| `CheckNotificationAccess() (bool, error)` | Checks if notification access is granted |
 
 ---
 
@@ -84,6 +88,8 @@ Checks whether the given special permission is currently granted.
 |------|----------------|-----------------|
 | `Accessibility` | `Settings.ACTION_ACCESSIBILITY_SETTINGS` | All |
 | `AllFilesAccess` | `Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION` | 11+ |
+| `BatteryExemption` | `Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | 6.0+ |
+| `NotificationAccess` | `Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS` | All |
 
 ---
 
@@ -92,3 +98,4 @@ Checks whether the given special permission is currently granted.
 - These permissions **cannot** be requested via `requestPermissions()`.
 - The user must manually enable them in the system settings screen.
 - `AllFilesAccess` requires Android 11 (API 30) or higher.
+- `NotificationAccess` requires a `NotificationListenerService` to be declared in the app manifest with the `BIND_NOTIFICATION_LISTENER_SERVICE` permission.

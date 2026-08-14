@@ -29,7 +29,7 @@ func scheduleCleanup() {
 }
 
 func schedulePeriodic() {
-    workmanager.EnqueuePeriodic("cleanup", 15, workmanager.DefaultConstraints())
+    workmanager.EnqueuePeriodic("cleanup", 15, workmanager.DefaultConstraints(), false)
 }
 ```
 
@@ -64,15 +64,16 @@ Schedules a one-time background task.
 
 ---
 
-### `(*WorkManagerPlugin).EnqueuePeriodic(taskKey string, intervalMinutes int, constraints *Constraints) (string, error)`
+### `(*WorkManagerPlugin).EnqueuePeriodic(taskKey string, intervalMinutes int, constraints *Constraints, replaceExisting bool) (string, error)`
 
-Schedules a repeating background task.
+Schedules a repeating background task using `enqueueUniquePeriodicWork`.
 
 | Argument | Type | Description |
 |----------|------|-------------|
-| `taskKey` | `string` | Unique task identifier |
-| `intervalMinutes` | `int` | Repeat interval in minutes |
+| `taskKey` | `string` | Unique task identifier used as the WorkManager unique name |
+| `intervalMinutes` | `int` | Repeat interval in minutes (minimum 15) |
 | `constraints` | `*Constraints` | Execution constraints |
+| `replaceExisting` | `bool` | If `true`, replaces any existing periodic work with the same `taskKey` (`REPLACE`). If `false`, keeps the existing work (`KEEP`) |
 
 ---
 

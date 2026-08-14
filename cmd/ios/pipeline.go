@@ -27,6 +27,102 @@ func applyConfig() {
 	XFrameworkName = "Sweetjuice.xcframework"
 }
 
+func sanitizeSwiftName(name string) string {
+	words := strings.Fields(name)
+	result := ""
+	for _, w := range words {
+		if len(w) > 0 {
+			result += strings.ToUpper(w[:1]) + w[1:]
+		}
+	}
+	if result == "" {
+		result = "App"
+	}
+	return result
+}
+
+func applyAppConfig() {
+	config := utils.LoadConfig()
+	appName := config.GetOrDefault("app", "name", "Sweet Juice")
+	packageName := config.GetOrDefault("app", "package", "com.sweetjuice.app")
+	sanitizedName := sanitizeSwiftName(appName)
+
+	xtoolPath := filepath.Join("native", "ios", "xtool.yml")
+	if utils.FileExists(xtoolPath) {
+		data, _ := os.ReadFile(xtoolPath)
+		updated := strings.Replace(string(data), "bundleID: com.sweetjuice.app", "bundleID: "+packageName, 1)
+		_ = os.WriteFile(xtoolPath, []byte(updated), 0644)
+	}
+
+	packageSwiftPath := filepath.Join("native", "ios", "Package.swift")
+	if utils.FileExists(packageSwiftPath) {
+		data, _ := os.ReadFile(packageSwiftPath)
+		updated := strings.ReplaceAll(string(data), "\"GenericApp\"", "\""+sanitizedName+"\"")
+		_ = os.WriteFile(packageSwiftPath, []byte(updated), 0644)
+	}
+
+	oldSourceDir := filepath.Join("native", "ios", "Sources", "GenericApp")
+	newSourceDir := filepath.Join("native", "ios", "Sources", sanitizedName)
+	if utils.DirExists(oldSourceDir) && sanitizedName != "GenericApp" {
+		_ = os.Rename(oldSourceDir, newSourceDir)
+	}
+
+	if utils.DirExists(newSourceDir) {
+		swiftAppPath := filepath.Join(newSourceDir, sanitizedName+"App.swift")
+		if utils.FileExists(swiftAppPath) {
+			data, _ := os.ReadFile(swiftAppPath)
+			updated := strings.Replace(string(data), "struct GenericAppApp", "struct "+sanitizedName+"App", 1)
+			updated = strings.Replace(updated, "GenericAppApp: App", sanitizedName+"App: App", 1)
+			_ = os.WriteFile(swiftAppPath, []byte(updated), 0644)
+		}
+	}
+
+	applyIconConfig()
+}
+
+func applyIconConfig() {
+	config := utils.LoadConfig()
+	iconPath := config.GetOrDefault("app", "icon", "")
+	if iconPath == "" {
+		return
+	}
+
+	if !utils.FileExists(iconPath) {
+		utils.Warn("App icon not found at " + iconPath + ", skipping icon replacement")
+		return
+	}
+
+	data, err := os.ReadFile(iconPath)
+	if err != nil {
+		utils.Warn("Failed to read app icon: " + err.Error())
+		return
+	}
+
+	iosResourcesDir := filepath.Join("native", "ios", "Resources")
+	if !utils.DirExists(iosResourcesDir) {
+		_ = os.MkdirAll(iosResourcesDir, 0755)
+	}
+	iconDest := filepath.Join(iosResourcesDir, "AppIcon.png")
+	_ = os.WriteFile(iconDest, data, 0644)
+
+	plistPaths := []string{
+		filepath.Join("native", "ios", "xtool", "App.app", "Info.plist"),
+	}
+	for _, plistPath := range plistPaths {
+		if !utils.FileExists(plistPath) {
+			continue
+		}
+		plistData, _ := os.ReadFile(plistPath)
+		updated := string(plistData)
+		if !strings.Contains(updated, "CFBundleIconFile") {
+			updated = strings.Replace(updated, "<key>CFBundleInfoDictionaryVersion</key>", "<key>CFBundleIconFile</key>\n\t<string>AppIcon</string>\n\t<key>CFBundleInfoDictionaryVersion</key>", 1)
+			_ = os.WriteFile(plistPath, []byte(updated), 0644)
+		}
+	}
+
+	utils.Info("iOS app icon copied to " + iconDest)
+}
+
 func ValidateIOSEnvironment() {
 	if !utils.CommandExists("xtool") {
 		utils.Fatal("xtool missing", fmt.Errorf("please install xtool: https://github.com/mizage/xtool"))
@@ -60,12 +156,16 @@ func ScaffoldProject(name string) {
 func RefreshPipeline() {
 	ValidateIOSEnvironment()
 	applyConfig()
+	applyAppConfig()
+
+	iosDir := filepath.Join("native", "ios")
+	assetsDir := filepath.Join(iosDir, "Resources")
+	if err := utils.CopyAppAssets(assetsDir); err != nil {
+		utils.Warn("Failed to copy app_assets: " + err.Error())
+	}
 
 	utils.BuildFrontend()
 
-	utils.Info("Starting iOS toolchain refresh and Go compilation...")
-
-	iosDir := filepath.Join("native", "ios")
 	targetSrcDir := filepath.Join(iosDir, "Sources", "Plugins")
 	stagingPluginsDir := filepath.Join(".plugins", "ios")
 	outputPath := filepath.Join(iosDir, XFrameworkName)

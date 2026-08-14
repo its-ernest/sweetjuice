@@ -9,6 +9,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ * CallsPlugin provides access to the native Android call logs.
+ * It supports fetching recent and historical call records.
+ */
 public class CallsPlugin implements SweetJuicePlugin {
 
     private static final String TAG = "CallsPlugin";
@@ -25,8 +29,9 @@ public class CallsPlugin implements SweetJuicePlugin {
     @Override
     public String handleAction(String action, String jsonArgsPayload) {
         try {
-            if ("getRecent".equals(action)) {
-                int limit = new JSONObject(jsonArgsPayload).optInt("limit", 50);
+            JSONObject args = new JSONObject(jsonArgsPayload);
+            if ("getRecent".equals(action) || "getLast".equals(action)) {
+                int limit = args.optInt("limit", 50);
                 return getCalls(limit);
             }
             if ("getAll".equals(action)) {
@@ -42,9 +47,6 @@ public class CallsPlugin implements SweetJuicePlugin {
         Cursor cursor = null;
         try {
             String sortOrder = CallLog.Calls.DATE + " DESC";
-            if (limit > 0) {
-                sortOrder += " LIMIT " + limit;
-            }
 
             cursor = mContext.getContentResolver().query(
                     CallLog.Calls.CONTENT_URI,
@@ -62,6 +64,9 @@ public class CallsPlugin implements SweetJuicePlugin {
             int count = 0;
 
             while (cursor.moveToNext()) {
+                if (limit > 0 && count >= limit) {
+                    break;
+                }
                 try {
                     JSONObject call = new JSONObject();
                     call.put("id", cursor.getLong(cursor.getColumnIndexOrThrow(CallLog.Calls._ID)));

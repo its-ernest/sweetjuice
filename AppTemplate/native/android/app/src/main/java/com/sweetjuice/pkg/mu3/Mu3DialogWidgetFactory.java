@@ -9,7 +9,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
-import com.sweetjuice.app.SweetJuiceApplication;
+import com.sweetjuice.core.SweetJuiceApp;
 import com.sweetjuice.plugin.SweetJuiceWidgetFactory;
 import org.json.JSONObject;
 import juiceapp.Juiceapp;
@@ -118,8 +118,8 @@ public class Mu3DialogWidgetFactory implements SweetJuiceWidgetFactory {
     }
 
     private AppCompatActivity getActiveActivity(Context ctx) {
-        if (ctx.getApplicationContext() instanceof SweetJuiceApplication) {
-            return ((SweetJuiceApplication) ctx.getApplicationContext()).getActiveActivity();
+        if (ctx.getApplicationContext() instanceof SweetJuiceApp) {
+            return ((SweetJuiceApp) ctx.getApplicationContext()).getActiveActivity();
         }
         return null;
     }

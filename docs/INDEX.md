@@ -46,7 +46,7 @@
 | [logger](PLUGINS/logger.md) | Platform logging | Android, iOS |
 | [mu3](PLUGINS/mu3.md) | Material 3 UI widgets | Android |
 | [notification](PLUGINS/notification.md) | System notifications | Android, iOS |
-| [osapi](PLUGINS/osapi.md) | OS/device information | Android, iOS |
+| [system](PLUGINS/system.md) | OS/device information | Android, iOS |
 | [permission](PLUGINS/permission.md) | Runtime permissions | Android |
 | [sms](PLUGINS/sms.md) | SMS access | Android |
 | [special](PLUGINS/special.md) | Special permissions | Android |

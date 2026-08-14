@@ -61,6 +61,12 @@ Retrieves the most recent call records.
 
 ---
 
+### `(*CallsPlugin).GetLast(limit int) (CallLog, error)`
+
+An alias for `GetRecent(limit)`.
+
+---
+
 ### `(*CallsPlugin).GetAll() (CallLog, error)`
 
 Retrieves all call records.

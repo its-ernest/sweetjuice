@@ -55,6 +55,28 @@ type SmsFolder struct {
 	Folder   string       `json:"folder"`
 }
 
+// GetRecent fetches the most recent SMS messages.
+func (p *SmsPlugin) GetRecent(limit int) (SmsFolder, error) {
+	var folder SmsFolder
+	payload, _ := json.Marshal(map[string]int{"limit": limit})
+	result := core.CallNativePlatform("sms:getRecent", string(payload))
+
+	if err := parsePluginError(result); err != nil {
+		return folder, err
+	}
+
+	if err := json.Unmarshal([]byte(result), &folder); err != nil {
+		return folder, err
+	}
+
+	return folder, nil
+}
+
+// GetLast is an alias for GetRecent.
+func (p *SmsPlugin) GetLast(limit int) (SmsFolder, error) {
+	return p.GetRecent(limit)
+}
+
 // GetInbox fetches SMS messages from the inbox.
 func (p *SmsPlugin) GetInbox() (SmsFolder, error) {
 	var folder SmsFolder

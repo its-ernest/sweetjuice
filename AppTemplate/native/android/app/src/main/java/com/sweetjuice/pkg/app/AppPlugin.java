@@ -2,6 +2,9 @@ package com.sweetjuice.pkg.app;
 
 import com.sweetjuice.plugin.SweetJuicePlugin;
 
+/**
+ * AppPlugin handles generic application-level metadata and events.
+ */
 public class AppPlugin implements SweetJuicePlugin {
 
     @Override

