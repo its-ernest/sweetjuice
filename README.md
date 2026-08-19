@@ -2,7 +2,7 @@
 
 Sweet Juice is an early port of Go v3 implementation to support mobile devies.
 
-⚠️ **Important Note:** iOS support is currently in beta!
+⚠️ **Important Note:** Android support is more matured than iOS support. Project is currently in beta!
 
 <p>
 	<img alt="Example UI" src="./hello-example.jpg" width="200" style="border-radius:6px;"/>
@@ -27,13 +27,14 @@ Sweet Juice is an early port of Go v3 implementation to support mobile devies.
 
 ## Quick links
 
-1. [Install & Build](docs/INSTALL.md)
-2. [CLI reference](docs/CLI.md)
+Documentation Link: [https://sweetjuice.pages.dev](https://sweetjuice.pages.dev)
+
+1. [Install & Build](https://sweetjuice.pages.dev/v1/docs/3.-install/)
+2. [CLI reference](https://sweetjuice.pages.dev/v1/docs/3.-install/)
 3. [Contributing](docs/CONTRIBUTING.md)
-4. [Documentation Index](docs/INDEX.md)
-5. [Plugin Development Guide](docs/PLUGINS_DOCS.md)
-6. [Android Plugin Guide](docs/PLUGINS_ANDROID.md)
-7. [iOS Plugin Guide](docs/PLUGINS_IOS.md)
+4. [Build First App](https://sweetjuice.pages.dev/v1/guide/5.-first_app/)
+5. [Plugin Development Guide](https://sweetjuice.pages.dev/v1/guide/6.-plugins/)
+6. [Android & iOS Plugin Guide](https://sweetjuice.pages.dev/v1/guide/7.-write_plugins/)
 8. [Benchmarks](docs/BENCHMARKS.md)
 
 ## Requirements
@@ -61,3 +62,8 @@ See [Full List](#)
 ## Notes
 
 - For contribution guidelines and plugin conventions see `docs/CONTRIBUTING.md`.
+
+## Credits 
+
+`gomobile` - Foundational framework in Go for generating bindings
+`nightly.link` - Useful in early stages of SweetJuice's cross compilation for iOS devices

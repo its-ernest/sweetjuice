@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import org.json.JSONObject;
 
@@ -98,9 +99,14 @@ class StyleApplier {
 
             if (style.has("backgroundColor")) {
                 try {
-                    int color = Color.parseColor(style.optString("backgroundColor"));
+                    String colorStr = style.optString("backgroundColor");
+                    int color = Color.parseColor(colorStr);
                     if (view instanceof MaterialCardView) {
                         ((MaterialCardView) view).setCardBackgroundColor(color);
+                    } else if (view instanceof MaterialButton) {
+                        ((MaterialButton) view).setBackgroundTintList(
+                                android.content.res.ColorStateList.valueOf(color)
+                        );
                     } else {
                         view.setBackgroundColor(color);
                     }

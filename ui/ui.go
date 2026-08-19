@@ -372,6 +372,7 @@ func (n *WidgetNode) Serialize() (map[string]interface{}, error) {
 		"id":       n.BaseNode.ID,
 		"props":    n.Props,
 		"children": children,
+		"style":    n.BaseNode.Style,
 		"events":   n.Events,
 	}, nil
 }
