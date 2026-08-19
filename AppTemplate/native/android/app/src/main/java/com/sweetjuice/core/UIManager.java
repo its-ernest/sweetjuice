@@ -99,6 +99,11 @@ public class UIManager {
                 return;
             }
 
+            if ("ui:dialog".equals(type)) {
+                dialogRenderer.showNativeDialog(rootNode);
+                return;
+            }
+
             renderFailed = false;
 
             if ("root".equals(type)) {
@@ -170,7 +175,7 @@ public class UIManager {
 
             if ("ui:dialog".equals(type)) {
                 dialogRenderer.showNativeDialog(node);
-                return existingView != null ? existingView : viewFactory.createView("text");
+                return existingView;
             }
 
             SweetJuiceWidgetFactory widgetFactory = widgetRegistry.get(type);

@@ -770,20 +770,21 @@ func (n *VideoNode) Serialize() (map[string]interface{}, error) {
 	}, nil
 }
 
-// Dialog Node - renders as a native AlertDialog overlay
+// Dialog Node - renders as a native Material 3 Alert Dialog
 type DialogNode struct {
 	BaseNode
-	Title      string
-	Message    string
-	ButtonText string
+	Title       string
+	Message     string
+	ConfirmText string
+	CancelText  string
 }
 
-func Dialog(title, message, buttonText string) *DialogNode {
+func Dialog(title, message string) *DialogNode {
 	return &DialogNode{
-		BaseNode:   BaseNode{Type: "ui:dialog", ID: GenID()},
-		Title:      title,
-		Message:    message,
-		ButtonText: buttonText,
+		BaseNode:    BaseNode{Type: "ui:dialog", ID: GenID()},
+		Title:       title,
+		Message:     message,
+		ConfirmText: "OK",
 	}
 }
 
@@ -792,19 +793,35 @@ func (n *DialogNode) ID(id string) *DialogNode {
 	return n
 }
 
+func (n *DialogNode) WithConfirm(text string) *DialogNode {
+	n.ConfirmText = text
+	return n
+}
+
+func (n *DialogNode) WithCancel(text string) *DialogNode {
+	n.CancelText = text
+	return n
+}
+
 func (n *DialogNode) OnConfirm(h func(interface{})) *DialogNode {
 	n.register("confirm", func(data interface{}) { h(data) })
 	return n
 }
 
+func (n *DialogNode) OnCancel(h func(interface{})) *DialogNode {
+	n.register("cancel", func(data interface{}) { h(data) })
+	return n
+}
+
 func (n *DialogNode) Serialize() (map[string]interface{}, error) {
 	return map[string]interface{}{
-		"type":       n.Type,
-		"id":         n.BaseNode.ID,
-		"title":      n.Title,
-		"message":    n.Message,
-		"buttonText": n.ButtonText,
-		"events":     n.Events,
+		"type":        n.Type,
+		"id":          n.BaseNode.ID,
+		"title":       n.Title,
+		"message":     n.Message,
+		"confirmText": n.ConfirmText,
+		"cancelText":  n.CancelText,
+		"events":      n.Events,
 	}, nil
 }
 

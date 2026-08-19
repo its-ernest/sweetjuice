@@ -93,9 +93,12 @@ func ReRender() error {
 	}
 
 	node := rootComponent.Render()
+	return RenderNode(node)
+}
+
+func RenderNode(node ui.Node) error {
 	if node == nil {
-		fmt.Println("Go: Error - Render returned nil node")
-		return fmt.Errorf("render returned nil node")
+		return fmt.Errorf("node is nil")
 	}
 
 	tree, err := node.Serialize()

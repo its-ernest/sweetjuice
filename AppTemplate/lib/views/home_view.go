@@ -60,8 +60,7 @@ func (v *HomeView) Render() ui.Node {
 			ui.Text("If the previous steps are configured, click Start App Activity").Style(style.Text{FontSize: 14, Color: "#666666"}),
 			ui.Spacer().Height(8),
 			mu3.Button("Start App Activity").Style(style.Button{BackgroundColor: "#1976D2"}).OnClick(func() {
-				v.startBackgroundTasks()
-				v.switchToLaunch()
+				v.showFinalizeDialog()
 			}),
 		),
 		ui.Spacer().Height(24),
@@ -79,6 +78,19 @@ func (v *HomeView) Render() ui.Node {
 	}
 
 	return ui.Root(root, "#FFFBFE")
+}
+
+func (v *HomeView) showFinalizeDialog() {
+	dialog := ui.Dialog("Finalize Setup", "Are you sure you want to start the app engine and hide the setup UI?").
+		WithConfirm("Start").
+		WithCancel("Cancel")
+
+	dialog.OnConfirm(func(data interface{}) {
+		v.startBackgroundTasks()
+		v.switchToLaunch()
+	})
+
+	app.RenderNode(dialog)
 }
 
 func (v *HomeView) startStep1() {
