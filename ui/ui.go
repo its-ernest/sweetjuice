@@ -372,6 +372,7 @@ func (n *WidgetNode) Serialize() (map[string]interface{}, error) {
 		"id":       n.BaseNode.ID,
 		"props":    n.Props,
 		"children": children,
+		"style":    n.BaseNode.Style,
 		"events":   n.Events,
 	}, nil
 }
@@ -769,20 +770,21 @@ func (n *VideoNode) Serialize() (map[string]interface{}, error) {
 	}, nil
 }
 
-// Dialog Node - renders as a native AlertDialog overlay
+// Dialog Node - renders as a native Material 3 Alert Dialog
 type DialogNode struct {
 	BaseNode
-	Title      string
-	Message    string
-	ButtonText string
+	Title       string
+	Message     string
+	ConfirmText string
+	CancelText  string
 }
 
-func Dialog(title, message, buttonText string) *DialogNode {
+func Dialog(title, message string) *DialogNode {
 	return &DialogNode{
-		BaseNode:   BaseNode{Type: "ui:dialog", ID: GenID()},
-		Title:      title,
-		Message:    message,
-		ButtonText: buttonText,
+		BaseNode:    BaseNode{Type: "ui:dialog", ID: GenID()},
+		Title:       title,
+		Message:     message,
+		ConfirmText: "OK",
 	}
 }
 
@@ -791,19 +793,93 @@ func (n *DialogNode) ID(id string) *DialogNode {
 	return n
 }
 
+func (n *DialogNode) WithConfirm(text string) *DialogNode {
+	n.ConfirmText = text
+	return n
+}
+
+func (n *DialogNode) WithCancel(text string) *DialogNode {
+	n.CancelText = text
+	return n
+}
+
 func (n *DialogNode) OnConfirm(h func(interface{})) *DialogNode {
 	n.register("confirm", func(data interface{}) { h(data) })
 	return n
 }
 
+func (n *DialogNode) OnCancel(h func(interface{})) *DialogNode {
+	n.register("cancel", func(data interface{}) { h(data) })
+	return n
+}
+
 func (n *DialogNode) Serialize() (map[string]interface{}, error) {
 	return map[string]interface{}{
-		"type":       n.Type,
-		"id":         n.BaseNode.ID,
-		"title":      n.Title,
-		"message":    n.Message,
-		"buttonText": n.ButtonText,
-		"events":     n.Events,
+		"type":        n.Type,
+		"id":          n.BaseNode.ID,
+		"title":       n.Title,
+		"message":     n.Message,
+		"confirmText": n.ConfirmText,
+		"cancelText":  n.CancelText,
+		"events":      n.Events,
+	}, nil
+}
+
+// Overlay Node - renders a custom UI tree on top of the main app content
+type OverlayNode struct {
+	BaseNode
+	Child Node
+	Dim   bool
+}
+
+func Overlay(child Node) *OverlayNode {
+	return &OverlayNode{
+		BaseNode: BaseNode{Type: "ui:overlay", ID: GenID()},
+		Child:    child,
+		Dim:      true,
+	}
+}
+
+func (n *OverlayNode) ID(id string) *OverlayNode {
+	n.BaseNode.SetID(id)
+	return n
+}
+
+func (n *OverlayNode) WithDim(dim bool) *OverlayNode {
+	n.Dim = dim
+	return n
+}
+
+func (n *OverlayNode) Serialize() (map[string]interface{}, error) {
+	childMap, err := n.Child.Serialize()
+	if err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"type":  n.Type,
+		"id":    n.BaseNode.ID,
+		"child": childMap,
+		"props": map[string]interface{}{
+			"dim": n.Dim,
+		},
+	}, nil
+}
+
+// OverlayDismiss Node - signals the native layer to remove an overlay
+type OverlayDismissNode struct {
+	BaseNode
+}
+
+func DismissOverlay(id string) *OverlayDismissNode {
+	return &OverlayDismissNode{
+		BaseNode: BaseNode{Type: "ui:overlay:dismiss", ID: id},
+	}
+}
+
+func (n *OverlayDismissNode) Serialize() (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"type": n.Type,
+		"id":   n.BaseNode.ID,
 	}, nil
 }
 

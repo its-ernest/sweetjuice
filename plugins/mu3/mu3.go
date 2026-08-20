@@ -200,10 +200,6 @@ func (p *Plugin) ShowCard(cardJSON string) string {
 	return core.CallNativePlatform("mu3:showCard", cardJSON)
 }
 
-func Dialog(title, message, buttonText string) *ui.WidgetNode {
-	return ui.Widget("mu3:dialog", map[string]interface{}{
-		"title":      title,
-		"message":    message,
-		"buttonText": buttonText,
-	})
+func Dialog(title, message string) *ui.DialogNode {
+	return ui.Dialog(title, message)
 }

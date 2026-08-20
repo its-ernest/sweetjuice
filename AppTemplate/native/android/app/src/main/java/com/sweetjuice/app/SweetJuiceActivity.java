@@ -28,7 +28,9 @@ import juiceapp.Juiceapp;
 public class SweetJuiceActivity extends AppCompatActivity {
 
     private UIManager mUIManager;
-    private LinearLayout rootLayout;
+    private android.widget.FrameLayout rootContainer;
+    private LinearLayout mainContentLayout;
+    private android.widget.FrameLayout overlayLayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,20 +46,42 @@ public class SweetJuiceActivity extends AppCompatActivity {
 
         registerGoPlugins(app);
 
-        ScrollView scrollView = new ScrollView(this);
-        scrollView.setFillViewport(true);
-        scrollView.setBackgroundColor(Color.TRANSPARENT);
-
-        rootLayout = new LinearLayout(this);
-        rootLayout.setOrientation(LinearLayout.VERTICAL);
-        rootLayout.setLayoutParams(new LinearLayout.LayoutParams(
+        // Root container is a FrameLayout to allow stacking (Overlay support)
+        rootContainer = new android.widget.FrameLayout(this);
+        rootContainer.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
         ));
-        scrollView.addView(rootLayout);
-        setContentView(scrollView);
 
-        mUIManager = new UIManager(this, rootLayout);
+        // Main app content layer
+        ScrollView scrollView = new ScrollView(this);
+        scrollView.setFillViewport(true);
+        scrollView.setBackgroundColor(Color.TRANSPARENT);
+        scrollView.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
+
+        mainContentLayout = new LinearLayout(this);
+        mainContentLayout.setOrientation(LinearLayout.VERTICAL);
+        mainContentLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
+        scrollView.addView(mainContentLayout);
+        rootContainer.addView(scrollView);
+
+        // Dedicated overlay layer
+        overlayLayer = new android.widget.FrameLayout(this);
+        overlayLayer.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
+        rootContainer.addView(overlayLayer);
+
+        setContentView(rootContainer);
+
+        mUIManager = new UIManager(this, mainContentLayout, overlayLayer);
 
         for (SweetJuicePlugin plugin : app.getPlugins().values()) {
             for (SweetJuiceWidgetFactory factory : plugin.getWidgetFactories()) {
@@ -103,13 +127,13 @@ public class SweetJuiceActivity extends AppCompatActivity {
 
     void showFallback(String msg) {
         runOnUiThread(() -> {
-            rootLayout.removeAllViews();
+            mainContentLayout.removeAllViews();
             TextView tv = new TextView(SweetJuiceActivity.this);
             tv.setText(msg);
             tv.setTextSize(18);
             tv.setTextColor(Color.DKGRAY);
             tv.setGravity(Gravity.CENTER);
-            rootLayout.addView(tv);
+            mainContentLayout.addView(tv);
         });
     }
 

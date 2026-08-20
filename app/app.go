@@ -93,9 +93,12 @@ func ReRender() error {
 	}
 
 	node := rootComponent.Render()
+	return RenderNode(node)
+}
+
+func RenderNode(node ui.Node) error {
 	if node == nil {
-		fmt.Println("Go: Error - Render returned nil node")
-		return fmt.Errorf("render returned nil node")
+		return fmt.Errorf("node is nil")
 	}
 
 	tree, err := node.Serialize()
@@ -120,4 +123,15 @@ func ReRender() error {
 	fmt.Printf("Go: Dispatching UI render (%d bytes)\n", len(payload))
 	core.CallNativePlatform("ui:render", string(payload))
 	return nil
+}
+
+func ShowOverlay(child ui.Node) string {
+	node := ui.Overlay(child)
+	RenderNode(node)
+	return node.BaseNode.ID
+}
+
+func DismissOverlay(id string) {
+	node := ui.DismissOverlay(id)
+	RenderNode(node)
 }
