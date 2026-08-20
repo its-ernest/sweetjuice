@@ -124,3 +124,14 @@ func RenderNode(node ui.Node) error {
 	core.CallNativePlatform("ui:render", string(payload))
 	return nil
 }
+
+func ShowOverlay(child ui.Node) string {
+	node := ui.Overlay(child)
+	RenderNode(node)
+	return node.BaseNode.ID
+}
+
+func DismissOverlay(id string) {
+	node := ui.DismissOverlay(id)
+	RenderNode(node)
+}

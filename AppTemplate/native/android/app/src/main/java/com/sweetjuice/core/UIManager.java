@@ -1,6 +1,7 @@
 package com.sweetjuice.core;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +34,7 @@ public class UIManager {
     private static final String TAG = "SweetJuice";
     private final Context context;
     private final ViewGroup rootContainer;
+    private final ViewGroup overlayLayer;
     private boolean renderFailed;
     private final WidgetRegistry widgetRegistry;
     private final ViewFactory viewFactory;
@@ -40,9 +42,10 @@ public class UIManager {
     private final EventBinder eventBinder;
     private final DialogRenderer dialogRenderer;
 
-    public UIManager(Context context, ViewGroup rootContainer) {
+    public UIManager(Context context, ViewGroup rootContainer, ViewGroup overlayLayer) {
         this.context = context;
         this.rootContainer = rootContainer;
+        this.overlayLayer = overlayLayer;
         this.renderFailed = false;
         this.viewFactory = new ViewFactory(context);
         this.widgetRegistry = new WidgetRegistry();
@@ -104,6 +107,16 @@ public class UIManager {
                 return;
             }
 
+            if ("ui:overlay".equals(type)) {
+                renderOverlay(rootNode);
+                return;
+            }
+
+            if ("ui:overlay:dismiss".equals(type)) {
+                dismissOverlay(rootNode);
+                return;
+            }
+
             renderFailed = false;
 
             if ("root".equals(type)) {
@@ -142,6 +155,53 @@ public class UIManager {
 
         } catch (Exception e) {
             Log.e(TAG, "UIManager: render fatal", e);
+        }
+    }
+
+    private void renderOverlay(JSONObject node) {
+        try {
+            String id = node.optString("id", "");
+            if (id.isEmpty()) return;
+
+            View existingOverlay = overlayLayer.findViewWithTag(id);
+            JSONObject childNode = node.optJSONObject("child");
+            if (childNode == null) return;
+
+            View overlayView = updateOrCreateView(existingOverlay, childNode);
+            if (existingOverlay != overlayView) {
+                if (existingOverlay != null) overlayLayer.removeView(existingOverlay);
+                overlayView.setTag(id);
+                overlayLayer.addView(overlayView);
+            }
+
+            // Apply dimming if requested in props
+            JSONObject props = node.optJSONObject("props");
+            if (props != null && props.optBoolean("dim", true)) {
+                overlayLayer.setBackgroundColor(Color.parseColor("#99000000"));
+            } else {
+                overlayLayer.setBackgroundColor(Color.TRANSPARENT);
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "UIManager: renderOverlay failed", e);
+        }
+    }
+
+    private void dismissOverlay(JSONObject node) {
+        try {
+            String id = node.optString("id", "");
+            if (id.isEmpty()) {
+                overlayLayer.removeAllViews();
+            } else {
+                View view = overlayLayer.findViewWithTag(id);
+                if (view != null) overlayLayer.removeView(view);
+            }
+
+            if (overlayLayer.getChildCount() == 0) {
+                overlayLayer.setBackgroundColor(Color.TRANSPARENT);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "UIManager: dismissOverlay failed", e);
         }
     }
 

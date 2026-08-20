@@ -51,11 +51,15 @@ Documentation Link: [https://sweetjuice.pages.dev](https://sweetjuice.pages.dev)
 | `plugins/notification` | `Yes` | `Yes` |
 | `plugins/permission` | `Yes` | `Yes` |
 | `plugins/special-permission` | `Yes` | `No` |
-| `plugins/devicestate` | `Yes` | `Yes` |
+| `plugins/gps` | `Yes` | `Yes` |
 | `plugins/workmanager` | `Yes` | `Yes` |
-| `plugins/osapi` | `Yes` | `Yes` |
+| `plugins/broadcast` | `Yes` | `Yes` |
+| `plugins/daemon` | `Yes` | `Yes` |
+| `plugins/dir` | `Yes` | `No` |
+| `plugins/system` | `Yes` | `Yes` |
 | `plugins/biometrics` | `Yes` | `Yes` |
 | `plugins/filepicker` | `Yes` | `Yes` |
+| `plugins/devicestate` | `Yes` | `Yes` |
 
 See [Full List](#)
 

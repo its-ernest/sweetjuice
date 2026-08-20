@@ -825,6 +825,64 @@ func (n *DialogNode) Serialize() (map[string]interface{}, error) {
 	}, nil
 }
 
+// Overlay Node - renders a custom UI tree on top of the main app content
+type OverlayNode struct {
+	BaseNode
+	Child Node
+	Dim   bool
+}
+
+func Overlay(child Node) *OverlayNode {
+	return &OverlayNode{
+		BaseNode: BaseNode{Type: "ui:overlay", ID: GenID()},
+		Child:    child,
+		Dim:      true,
+	}
+}
+
+func (n *OverlayNode) ID(id string) *OverlayNode {
+	n.BaseNode.SetID(id)
+	return n
+}
+
+func (n *OverlayNode) WithDim(dim bool) *OverlayNode {
+	n.Dim = dim
+	return n
+}
+
+func (n *OverlayNode) Serialize() (map[string]interface{}, error) {
+	childMap, err := n.Child.Serialize()
+	if err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"type":  n.Type,
+		"id":    n.BaseNode.ID,
+		"child": childMap,
+		"props": map[string]interface{}{
+			"dim": n.Dim,
+		},
+	}, nil
+}
+
+// OverlayDismiss Node - signals the native layer to remove an overlay
+type OverlayDismissNode struct {
+	BaseNode
+}
+
+func DismissOverlay(id string) *OverlayDismissNode {
+	return &OverlayDismissNode{
+		BaseNode: BaseNode{Type: "ui:overlay:dismiss", ID: id},
+	}
+}
+
+func (n *OverlayDismissNode) Serialize() (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"type": n.Type,
+		"id":   n.BaseNode.ID,
+	}, nil
+}
+
 // Event Registry
 var eventRegistry = make(map[string]func(interface{}))
 

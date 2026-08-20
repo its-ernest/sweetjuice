@@ -36,49 +36,52 @@ class StyleApplier {
         try {
             if (style == null) return;
 
-            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) view.getLayoutParams();
-            if (lp == null) {
-                lp = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams baseLp = view.getLayoutParams();
+            if (baseLp == null) {
+                baseLp = new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT
                 );
             }
 
-            if (style.has("flex")) {
-                try {
-                    lp.weight = (float) style.optDouble("flex");
-                    if (lp.weight > 0) {
-                        ViewGroup parent = (ViewGroup) view.getParent();
-                        boolean horizontal = parent instanceof LinearLayout &&
-                                ((LinearLayout) parent).getOrientation() == LinearLayout.HORIZONTAL;
-                        if (horizontal) {
-                            lp.width = 0;
-                            lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
-                        } else {
-                            lp.height = 0;
-                            lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            if (baseLp instanceof LinearLayout.LayoutParams) {
+                LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) baseLp;
+                if (style.has("flex")) {
+                    try {
+                        lp.weight = (float) style.optDouble("flex");
+                        if (lp.weight > 0) {
+                            ViewGroup parent = (ViewGroup) view.getParent();
+                            boolean horizontal = parent instanceof LinearLayout &&
+                                    ((LinearLayout) parent).getOrientation() == LinearLayout.HORIZONTAL;
+                            if (horizontal) {
+                                lp.width = 0;
+                                lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+                            } else {
+                                lp.height = 0;
+                                lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                            }
                         }
+                    } catch (Exception e) {
+                        Log.e(TAG, "StyleApplier: flex style failed", e);
                     }
-                } catch (Exception e) {
-                    Log.e(TAG, "StyleApplier: flex style failed", e);
                 }
             }
 
             if (style.has("width")) {
                 try {
-                    lp.width = viewFactory.dpToPx((float) style.optDouble("width"));
+                    baseLp.width = viewFactory.dpToPx((float) style.optDouble("width"));
                 } catch (Exception e) {
                     Log.e(TAG, "StyleApplier: width style failed", e);
                 }
             }
             if (style.has("height")) {
                 try {
-                    lp.height = viewFactory.dpToPx((float) style.optDouble("height"));
+                    baseLp.height = viewFactory.dpToPx((float) style.optDouble("height"));
                 } catch (Exception e) {
                     Log.e(TAG, "StyleApplier: height style failed", e);
                 }
             }
-            view.setLayoutParams(lp);
+            view.setLayoutParams(baseLp);
 
             try {
                 int p = viewFactory.dpToPx((float) style.optDouble("padding", 0));
@@ -134,9 +137,27 @@ class StyleApplier {
                     int gravity = 0;
                     if ("center".equals(align)) gravity |= Gravity.CENTER_HORIZONTAL;
                     if ("center".equals(justify)) gravity |= Gravity.CENTER_VERTICAL;
+                    if ("end".equals(align)) gravity |= Gravity.END;
+                    if ("end".equals(justify)) gravity |= Gravity.BOTTOM;
                     ll.setGravity(gravity);
                 } catch (Exception e) {
                     Log.e(TAG, "StyleApplier: gravity failed", e);
+                }
+            }
+
+            if (baseLp instanceof android.widget.FrameLayout.LayoutParams) {
+                try {
+                    android.widget.FrameLayout.LayoutParams flp = (android.widget.FrameLayout.LayoutParams) baseLp;
+                    String align = style.optString("alignItems");
+                    String justify = style.optString("justifyContent");
+                    int gravity = 0;
+                    if ("center".equals(align)) gravity |= Gravity.CENTER_HORIZONTAL;
+                    if ("center".equals(justify)) gravity |= Gravity.CENTER_VERTICAL;
+                    if (gravity != 0) {
+                        flp.gravity = gravity;
+                        view.setLayoutParams(flp);
+                    }
+                } catch (Exception e) {
                 }
             }
 
