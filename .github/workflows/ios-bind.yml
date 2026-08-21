@@ -1,7 +1,7 @@
 name: iOS Gomobile Bind
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "transform/ui-plugin" ]
   workflow_dispatch:
 jobs:
   build:
