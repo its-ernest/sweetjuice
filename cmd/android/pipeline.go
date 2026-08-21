@@ -52,7 +52,7 @@ type Category struct {
 func SetupAndroidLocalProperties(targetDir string) {
 	sdkPath := GetAndroidSDKPath()
 	if sdkPath != "" {
-		androidDir := filepath.Join(targetDir, "native", "android")
+		androidDir := filepath.Join(targetDir, ".native", "android")
 		propsPath := filepath.Join(androidDir, "local.properties")
 		if !utils.DirExists(androidDir) {
 			_ = os.MkdirAll(androidDir, 0755)
@@ -181,7 +181,7 @@ func ValidateAndroidEnvironment() {
 		utils.Fatal("Android SDK not found", fmt.Errorf("could not locate SDK in environment or default locations. Please install Android Studio or set ANDROID_HOME"))
 	}
 
-	if utils.DirExists(filepath.Join("native", "android")) {
+	if utils.DirExists(filepath.Join(".native", "android")) {
 		SetupAndroidLocalProperties(".")
 	}
 
@@ -208,14 +208,14 @@ func applyAppConfig() {
 	versionName := config.GetOrDefault("build", "version", "1.0")
 	minApi := config.GetOrDefault("android", "min_api", "23")
 
-	settingsPath := filepath.Join("native", "android", "settings.gradle")
+	settingsPath := filepath.Join(".native", "android", "settings.gradle")
 	if utils.FileExists(settingsPath) {
 		data, _ := os.ReadFile(settingsPath)
 		updated := strings.Replace(string(data), "rootProject.name = \"SweetJuice Mobile\"", "rootProject.name = \""+appName+"\"", 1)
 		_ = os.WriteFile(settingsPath, []byte(updated), 0644)
 	}
 
-	buildGradlePath := filepath.Join("native", "android", "app", "build.gradle")
+	buildGradlePath := filepath.Join(".native", "android", "app", "build.gradle")
 	if utils.FileExists(buildGradlePath) {
 		data, _ := os.ReadFile(buildGradlePath)
 		updated := string(data)
@@ -227,21 +227,21 @@ func applyAppConfig() {
 		_ = os.WriteFile(buildGradlePath, []byte(updated), 0644)
 	}
 
-	manifestPath := filepath.Join("native", "android", "app", "src", "main", "AndroidManifest.xml")
+	manifestPath := filepath.Join(".native", "android", "app", "src", "main", "AndroidManifest.xml")
 	if utils.FileExists(manifestPath) {
 		data, _ := os.ReadFile(manifestPath)
 		updated := strings.Replace(string(data), "package=\"com.sweetjuice.app\"", "package=\""+packageName+"\"", 1)
 		_ = os.WriteFile(manifestPath, []byte(updated), 0644)
 	}
 
-	stringsPath := filepath.Join("native", "android", "app", "src", "main", "res", "values", "strings.xml")
+	stringsPath := filepath.Join(".native", "android", "app", "src", "main", "res", "values", "strings.xml")
 	if utils.FileExists(stringsPath) {
 		data, _ := os.ReadFile(stringsPath)
 		updated := strings.Replace(string(data), "<string name=\"app_name\">Sweet Juice</string>", "<string name=\"app_name\">"+appName+"</string>", 1)
 		_ = os.WriteFile(stringsPath, []byte(updated), 0644)
 	}
 
-	javaBaseDir := filepath.Join("native", "android", "app", "src", "main", "java", "com", "sweetjuice", "app")
+	javaBaseDir := filepath.Join(".native", "android", "app", "src", "main", "java", "com", "sweetjuice", "app")
 	if utils.DirExists(javaBaseDir) {
 		files, _ := os.ReadDir(javaBaseDir)
 		for _, f := range files {
@@ -280,7 +280,7 @@ func applyIconConfig() {
 	roundIconName := "ic_launcher_round" + ext
 	foregroundName := "ic_launcher_foreground" + ext
 
-	mipmapDirs, _ := filepath.Glob(filepath.Join("native", "android", "app", "src", "main", "res", "mipmap-*"))
+	mipmapDirs, _ := filepath.Glob(filepath.Join(".native", "android", "app", "src", "main", "res", "mipmap-*"))
 	for _, dir := range mipmapDirs {
 		base := filepath.Base(dir)
 		if base == "mipmap-anydpi-v26" {
@@ -303,7 +303,7 @@ func applyIconConfig() {
 		_ = os.WriteFile(filepath.Join(dir, foregroundName), data, 0644)
 	}
 
-	adaptiveIconDir := filepath.Join("native", "android", "app", "src", "main", "res", "mipmap-anydpi-v26")
+	adaptiveIconDir := filepath.Join(".native", "android", "app", "src", "main", "res", "mipmap-anydpi-v26")
 	if utils.DirExists(adaptiveIconDir) {
 		launcherXML := filepath.Join(adaptiveIconDir, "ic_launcher.xml")
 		if utils.FileExists(launcherXML) {
@@ -319,7 +319,7 @@ func applyIconConfig() {
 		}
 	}
 
-	manifestPath := filepath.Join("native", "android", "app", "src", "main", "AndroidManifest.xml")
+	manifestPath := filepath.Join(".native", "android", "app", "src", "main", "AndroidManifest.xml")
 	if utils.FileExists(manifestPath) {
 		data, _ := os.ReadFile(manifestPath)
 		updated := strings.Replace(string(data), "android:icon=\"@mipmap/ic_juice\"", "android:icon=\"@mipmap/ic_launcher\"", 1)
@@ -327,7 +327,7 @@ func applyIconConfig() {
 		_ = os.WriteFile(manifestPath, []byte(updated), 0644)
 	}
 
-	backgroundDrawable := filepath.Join("native", "android", "app", "src", "main", "res", "drawable", "ic_launcher_background.xml")
+	backgroundDrawable := filepath.Join(".native", "android", "app", "src", "main", "res", "drawable", "ic_launcher_background.xml")
 	if utils.FileExists(backgroundDrawable) {
 		_ = os.WriteFile(backgroundDrawable, []byte(`<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -349,15 +349,15 @@ func RefreshPipeline() {
 	applyConfig()
 	applyAppConfig()
 
-	assetsDir := filepath.Join("native", "android", "app", "src", "main", "assets")
+	assetsDir := filepath.Join(".native", "android", "app", "src", "main", "assets")
 	if err := utils.CopyAppAssets(assetsDir); err != nil {
 		utils.Warn("Failed to copy app_assets: " + err.Error())
 	}
 
 	utils.BuildFrontend()
 
-	outputPath := filepath.Join("native", "android", "app", "libs")
-	targetJavaSrcDir := filepath.Join("native", "android", "app", "src", "main", "java")
+	outputPath := filepath.Join(".native", "android", "app", "libs")
+	targetJavaSrcDir := filepath.Join(".native", "android", "app", "src", "main", "java")
 	stagingPluginsDir := filepath.Join(".plugins", "android")
 
 	_ = os.MkdirAll(outputPath, 0755)
@@ -383,7 +383,7 @@ func RefreshPipeline() {
 func BuildPipeline(mode string) {
 	ValidateAndroidEnvironment()
 	applyConfig()
-	androidDir := filepath.Join("native", "android")
+	androidDir := filepath.Join(".native", "android")
 	if !utils.DirExists(androidDir) {
 		utils.Error("Native Android path layout missing.")
 		os.Exit(1)
@@ -524,7 +524,7 @@ func RunPipeline() {
 		}
 	}
 
-	apkPath := filepath.Join("native", "android", "app", "build", "outputs", "apk", "debug", "app-debug.apk")
+	apkPath := filepath.Join(".native", "android", "app", "build", "outputs", "apk", "debug", "app-debug.apk")
 	if !utils.FileExists(apkPath) {
 		utils.Error("APK not found at " + apkPath + ". Did you build it?")
 		os.Exit(1)
@@ -533,7 +533,7 @@ func RunPipeline() {
 	utils.Info("Installing APK to device...")
 	utils.RunCmd(adbTool, "install", "-r", apkPath)
 
-	manifestPath := filepath.Join("native", "android", "app", "src", "main", "AndroidManifest.xml")
+	manifestPath := filepath.Join(".native", "android", "app", "src", "main", "AndroidManifest.xml")
 	packageName, launcherActivity, err := parseManifestDetails(manifestPath)
 	if err != nil {
 		return

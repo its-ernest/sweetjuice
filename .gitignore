@@ -6,7 +6,7 @@ bin/
 *.out
 #*.jar
 *.aar
-/AppTemplate/native/ios/SweetJuice.xcframework/
+/AppTemplate/.native/ios/SweetJuice.xcframework/
 *.so
 /vendor/
 /dist/
@@ -40,23 +40,23 @@ bin/
 /TODOs.md
 
 # Generated Android library outputs
-/AppTemplate/native/android/*.iml
-/AppTemplate/native/android/.gradle
-/AppTemplate/native/android/local.properties
-/AppTemplate/native/android/.idea/
-/AppTemplate/native/android/.idea/caches
-/AppTemplate/native/android/.idea/libraries
-/AppTemplate/native/android/.idea/modules.xml
-/AppTemplate/native/android/.idea/workspace.xml
-/AppTemplate/native/android/.idea/navEditor.xml
-/AppTemplate/native/android/.idea/assetWizardSettings.xml
-/AppTemplate/native/android/.DS_Store
-/AppTemplate/native/android/build
-/AppTemplate/native/android/captures
-/AppTemplate/native/android/.externalNativeBuild
-/AppTemplate/native/android/.cxx
-/AppTemplate/native/android/local.properties
-/AppTemplate/native/android/app/libs
+/AppTemplate/.native/android/*.iml
+/AppTemplate/.native/android/.gradle
+/AppTemplate/.native/android/local.properties
+/AppTemplate/.native/android/.idea/
+/AppTemplate/.native/android/.idea/caches
+/AppTemplate/.native/android/.idea/libraries
+/AppTemplate/.native/android/.idea/modules.xml
+/AppTemplate/.native/android/.idea/workspace.xml
+/AppTemplate/.native/android/.idea/navEditor.xml
+/AppTemplate/.native/android/.idea/assetWizardSettings.xml
+/AppTemplate/.native/android/.DS_Store
+/AppTemplate/.native/android/build
+/AppTemplate/.native/android/captures
+/AppTemplate/.native/android/.externalNativeBuild
+/AppTemplate/.native/android/.cxx
+/AppTemplate/.native/android/local.properties
+/AppTemplate/.native/android/app/libs
 
 # Temporary files
 temps/
@@ -68,8 +68,8 @@ temp/
 ./build/ios/*
 .future.md
 /AppTemplate/bindings
-/AppTemplate/native/android/app/libs/*.jar
-/AppTemplate/native/android/app/libs/*.aar
-/AppTemplate/native/ios/*.xcframework
+/AppTemplate/.native/android/app/libs/*.jar
+/AppTemplate/.native/android/app/libs/*.aar
+/AppTemplate/.native/ios/*.xcframework
 /AppTemplate/frontend/dist/
 /AppTemplate/frontend/node_modules/

@@ -31,8 +31,8 @@ This scaffolds a fresh project from the local `AppTemplate` included in the Swee
 
 - `core/` — core Go runtime package for mobile bridged apps
 - `plugins/` — Go-side implementations of native plugins
-- `native/android/` — Android Studio project using the generated AAR
-- `native/ios/` — iOS project using the generated XFramework
+- `.native/android/` — Android Studio project using the generated AAR
+- `.native/ios/` — iOS project using the generated XFramework
 - `frontend/` — web UI assets
 
 ## Refresh / Sync (generate native bindings)

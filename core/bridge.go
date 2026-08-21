@@ -39,6 +39,32 @@ func SetUIEventDispatcher(dispatcher func(id string, event string, data interfac
 	uiEventDispatcher = dispatcher
 }
 
+// PollNativeEvent checks for any pending events from Go to Native.
+func PollNativeEvent() string {
+	if globalAppInstance == nil {
+		return ""
+	}
+	return globalAppInstance.Events.PollNativeEvent()
+}
+
+// GetRegisteredPluginsSnapshot returns a JSON representation of all registered plugins.
+func GetRegisteredPluginsSnapshot() string {
+	defs := GetRegisteredPlugins()
+	if len(defs) == 0 {
+		return "[]"
+	}
+	items := make([]map[string]string, len(defs))
+	for i, d := range defs {
+		items[i] = map[string]string{
+			"domain":  d.Domain,
+			"javaPkg": d.JavaPkg,
+			"class":   d.Class,
+		}
+	}
+	bytes, _ := json.Marshal(items)
+	return string(bytes)
+}
+
 // MobileBridge is a dedicated wrapper struct that gobind can parse into a Java Class.
 type MobileBridge struct{}
 

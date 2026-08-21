@@ -17,7 +17,7 @@ Follow the existing conventions (see `plugins/PLUGINS.md` and `plugins/PLUGINS_A
 - Plugin layout: `plugins/<name>/` with Go wrapper package and optional `android/` directory for Java/Kotlin sources.
 - The Go wrapper should implement an `Init(app *wails.Application) error` method when needed and expose methods for frontend and other Go packages.
 - Native Android side must implement the `SweetJuicePlugin` interface and return a stable domain string via `getDomain()`.
-- Register your plugin in the sample application for manual testing by adding it to `SweetJuiceApplication.registerPlugin(...)` in `_examples/helloworld/native/android/app/src/main/java/com/example/juiceobile/SweetJuiceApplication.java`.
+- Register your plugin in the sample application for manual testing by adding it to `SweetJuiceApplication.registerPlugin(...)` in `_examples/helloworld/.native/android/app/src/main/java/com/example/juiceobile/SweetJuiceApplication.java`.
 
 ## Documentation
 

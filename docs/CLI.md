@@ -41,13 +41,13 @@ When to use `--refresh`
 
 - The CLI automatically runs sync during `build`/`run`. Use `juice --refresh android` only when you want to force a rebuild of the generated AAR/JAR artifacts (for debugging or template changes).
 - `--refresh` now reads `config.ini` and applies the configured `app.name`, `app.package`, `build.version`, `build.versionCode`, and `android.min_api` to the Android template, and `app.name`, `app.package`, and `build.version` to the iOS template.
-- `--refresh` also copies `app_assets/` into the platform asset directories (`native/android/app/src/main/assets/` and `native/ios/Resources/`).
-- If `config.ini [app] icon` is set, `--refresh` replaces the Android launcher icons in all `mipmap-*` directories and updates `AndroidManifest.xml` accordingly, and copies the icon to `native/ios/Resources/AppIcon.png`.
+- `--refresh` also copies `app_assets/` into the platform asset directories (`.native/android/app/src/main/assets/` and `.native/ios/Resources/`).
+- If `config.ini [app] icon` is set, `--refresh` replaces the Android launcher icons in all `mipmap-*` directories and updates `AndroidManifest.xml` accordingly, and copies the icon to `.native/ios/Resources/AppIcon.png`.
 
 Environment notes
 
 - Ensure Android SDK and NDK are installed and available to the environment (Android Studio recommended).
-- If builds fail due to Gradle, open `native/android/` in Android Studio and inspect the Gradle wrapper and SDK/NDK settings.
+- If builds fail due to Gradle, open `.native/android/` in Android Studio and inspect the Gradle wrapper and SDK/NDK settings.
 
 CI / scripts
 

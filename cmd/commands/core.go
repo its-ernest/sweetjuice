@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	Version = "v1.4.0"
+	Version = "v1.0.0"
 )
 
 func ShowUsage() {
@@ -187,9 +187,13 @@ func ExecuteRunCross(platform string) {
 		utils.Fatal("Failed to sync code to cross-repo", err)
 	}
 
-	_ = os.RemoveAll(filepath.Join(crossRepoPath, "native"))
+	_ = os.RemoveAll(filepath.Join(crossRepoPath, ".native"))
 	_ = os.RemoveAll(filepath.Join(crossRepoPath, "build"))
 	_ = os.RemoveAll(filepath.Join(crossRepoPath, "temps"))
+
+	if err := sanitizeCrossRepoGoMod(crossRepoPath); err != nil {
+		utils.Warn("Failed to sanitize go.mod for cross build: " + err.Error())
+	}
 
 	utils.BuildFrontend()
 
@@ -204,7 +208,7 @@ func ExecuteRunCross(platform string) {
 
 	utils.Println()
 	utils.Info("Downloading built bindings from GitHub Release...")
-	iosNativePath := filepath.Join("native", "ios")
+	iosNativePath := filepath.Join(".native", "ios")
 	_ = os.MkdirAll(iosNativePath, 0755)
 
 	zipPath := filepath.Join(iosNativePath, "Sweetjuice.xcframework.zip")
@@ -269,8 +273,20 @@ func ExecuteSetup(target string) {
 	if utils.FileExists("config.ini") {
 		data, _ := os.ReadFile("config.ini")
 		content := string(data)
-		content = strings.Replace(content, "github_user =", "github_user = "+githubUser, 1)
-		content = strings.Replace(content, "cross_repo_path =", "cross_repo_path = "+crossRepoPath, 1)
+		lines := strings.Split(content, "\n")
+		for i, line := range lines {
+			if strings.HasPrefix(line, "github_user =") {
+				lines[i] = "github_user = " + githubUser
+				break
+			}
+		}
+		for i, line := range lines {
+			if strings.HasPrefix(line, "cross_repo_path =") {
+				lines[i] = "cross_repo_path = " + crossRepoPath
+				break
+			}
+		}
+		content = strings.Join(lines, "\n")
 		_ = os.WriteFile("config.ini", []byte(content), 0644)
 		utils.Success("Successfully updated config.ini")
 	} else {
@@ -279,6 +295,33 @@ func ExecuteSetup(target string) {
 
 	utils.Println("")
 	utils.Success("Cross-compilation setup complete!")
+}
+
+func sanitizeCrossRepoGoMod(repoPath string) error {
+	goModPath := filepath.Join(repoPath, "go.mod")
+	if !utils.FileExists(goModPath) {
+		return fmt.Errorf("go.mod not found in cross repo")
+	}
+
+	data, err := os.ReadFile(goModPath)
+	if err != nil {
+		return err
+	}
+
+	content := string(data)
+	lines := strings.Split(content, "\n")
+	var result []string
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "replace github.com/sweet-juice/sweetjuice =>") {
+			result = append(result, "\treplace github.com/sweet-juice/sweetjuice => .")
+			continue
+		}
+		result = append(result, line)
+	}
+
+	sanitized := strings.Join(result, "\n")
+	return os.WriteFile(goModPath, []byte(sanitized), 0644)
 }
 
 func ManagePlugin(action, pluginRepo string) {

@@ -1,0 +1,13 @@
+name: SweetJuice
+bundleID: com.sweetjuice.app
+version: 1.0.0
+build: 1
+type: application
+platform: ios
+deploymentTarget: 14.0
+targets:
+  App:
+    type: application
+    sources: [Sources/App]
+    dependencies:
+      - Sweetjuice.xcframework

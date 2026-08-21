@@ -1,58 +1,34 @@
-# Sweet Juice — Compact Context
+# SweetJuice Project State Summary
 
-## Project
-Go-based mobile app framework (`github.com/sweet-juice/sweetjuice`). Builds native Android apps from Go via declarative UI + gomobile bindings. CLI: `juice`.
+## 1. Architectural Progress
+- **Hybrid Bridge**: Successfully established a Go-centric Tri-Bridge architecture. Business logic and UI declarations live in Go, while rendering is delegated to Native (Android Views / SwiftUI).
+- **Package Resiliency**: Core framework classes moved to `com.sweetjuice.core` (Android) and `Sources/App` (iOS) to support dynamic package renaming via `config.ini`.
+- **Managed Directories**: 
+    - `.native/`: Contains stable platform templates (not edited by user).
+    - `.plugins/`: Source of truth for native plugin code, synchronized to the build folder by the CLI.
+    - `app_assets/`: Static assets synchronized to native asset folders.
 
-## Architecture
-- **Go Engine**: State, event bus, declarative UI serialization
-- **Native Shell**: Android (Java/Gradle) renders JSON→views, handles system APIs
-- **Bridge**: JSON strings with `"domain:action"` routing
+## 2. Recent Features & Fixes
+- **Overlay System**: Flutter-inspired layered UI. Supports custom Go-driven boxes with background dimming on both Android and iOS.
+- **Material 3 Dialogs**: High-level `ui.Dialog` API in Go that triggers native `MaterialAlertDialogBuilder` on Android.
+- **Android Bridge Stabilization**: Re-exported all JNI-critical functions (`HandleMessageFromFrontend`, `SetNativeCallHandler`) in the `juiceapp` package to fix `gobind` visibility issues.
+- **Smart CLI**: Android build now skips custom APK signing in `debug` mode for faster iteration.
 
-## Key Packages
-- `core/`: Runtime (`app.go`, `bridge.go`, `eventbus.go`)
-- `app/`: Bootstrap (`Run`, `ReRender`)
-- `ui/`: Declarative UI nodes + Material 3 widgets
-- `plugins/`: Built-ins (permission, notification, biometric, datastore, etc.)
-- `AppTemplate/`: Project scaffold copied by `juice --new`
+## 3. Current Task: iOS Cross-Compilation
+We have initiated the iOS transition. The SwiftUI renderer is in place, but since we are on Linux, we need a CI-based build pipeline.
 
-## AppTemplate Structure
-- `engine.go`: Exports `StartApplication()`, `HandleMessageFromFrontend()`, etc. Package: `juiceapp`
-- `plugins.go`: `registerPluginDefinitions()` (before Run) + `initPlugins()` (after Run)
-- `start.go`: Bootstrap, creates state + root view
-- `lib/state/`: Example state with waiting/dialog/tab management
-- `lib/views/`: Example view with permission buttons
-- `native/android/`: Full Android Studio project
+### Next Steps (Unfinished):
+1.  **`juice-cross` Integration**: Finalize the sibling repository logic.
+2.  **`juice --run-cross ios`**:
+    - Clone `juice-cross` into a temporary workspace.
+    - Sync the current Go codebase and `.plugins/ios` into the workspace.
+    - Push to the user's GitHub fork.
+    - Implement a polling mechanism to wait for the GitHub Action to complete.
+    - Download the built `Sweetjuice.xcframework.zip` (using `nightly.link` or GH API).
+    - Extract and move to `.native/ios/` for final packaging via `xtool`.
+3.  **iOS Plugin Parity**: Stabilize `Broadcast`, `WorkManager`, and `Notification` plugins for the iOS platform.
 
-## Communication Flow
-```
-Go → Native: CallNativePlatform("domain:action", json)
-Native → Go: handleNativeAction("domain:callback", json)
-UI Events: handleMessageFromFrontend("ui:event", json)
-Rendering: app.ReRender() → Serialize() → JSON → ui:render
-```
-
-## Plugin Registration Flow
-1. `registerPluginDefinitions()` — calls `RegisterPlugin()` for all plugins BEFORE `app.Run()`
-2. `app.Run(root)` — initializes global app, triggers first render
-3. Java reads `GetRegisteredPlugins()`, registers widget factories
-4. `initPlugins()` — calls `plugin.Init(app)` AFTER `app.Run()`
-5. Java calls `Juiceapp.reRender()` for final render with all factories
-
-## Current State
-- Early stage, transitioning from webview to native components
-- Android focus; iOS experimental
-- Version v1.4.0 CLI, v1.0.0-alpha framework
-- Active: `feature/sweetjuice-rebrand-and-plugins`
-
-## Notable TODOs
-- iOS Docker-Xtool integration
-- Background services in Go
-- Geolocation, Camera (separate repo)
-- `deviceinfo`, `badge`, `share` plugins
-
-## Recent Changes
-- Dynamic plugin registration from Go side only
-- Android derives widget factories from `GetRegisteredPlugins()`
-- Permission plugin fixed: callback now handles JSON array payload
-- Background location permission has its own button with fallback to app settings
-- Special permissions plugin cleaned up (removed notification access)
+## 4. Technical Constants
+- **Core Version**: v1.4.0
+- **Android Target**: API 21+ (Min), 34 (Target)
+- **iOS Target**: iOS 14.0+ (SwiftUI)
