@@ -39,7 +39,7 @@ struct ViewFactory {
                 ]
                 if let data = try? JSONSerialization.data(withJSONObject: event),
                    let json = String(data: data, encoding: .utf8) {
-                    SweetjuiceHandleNativeAction("ui:event", json)
+                    Sweetjuice.handleMessageFromFrontend("ui:event", json)
                 }
             }) {
                 Text(node.text ?? "")

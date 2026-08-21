@@ -34,8 +34,8 @@ public class NotificationPlugin {
         let id = json["id"] as? Int ?? 0
         let title = json["title"] as? String ?? ""
         let body = json["body"] as? String ?? ""
-        let channelId = json["channel_id"] as? String ?? "default_channel"
-        let channelName = json["channel_name"] as? String ?? "General Notifications"
+        let _ = json["channel_id"] as? String ?? "default_channel"
+        let _ = json["channel_name"] as? String ?? "General Notifications"
 
         let content = UNMutableNotificationContent()
         content.title = title
