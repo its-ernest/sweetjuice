@@ -127,8 +127,6 @@ func ValidateIOSEnvironment() {
 	if !utils.CommandExists("xtool") {
 		utils.Fatal("xtool missing", fmt.Errorf("please install xtool: https://github.com/mizage/xtool"))
 	}
-
-	utils.EnsureGoMobileTools()
 }
 
 func ScaffoldProject(name string) {
@@ -155,6 +153,7 @@ func ScaffoldProject(name string) {
 
 func RefreshPipeline() {
 	ValidateIOSEnvironment()
+	utils.EnsureGoMobileTools()
 	applyConfig()
 	applyAppConfig()
 
@@ -235,6 +234,16 @@ func RunPipeline() {
 	if !utils.DirExists(iosDir) {
 		utils.Error("Native iOS path layout missing.")
 		os.Exit(1)
+	}
+
+	stagingPluginsDir := filepath.Join(".plugins", "ios")
+	targetSrcDir := filepath.Join(iosDir, "Sources", "Plugins")
+	if utils.DirExists(stagingPluginsDir) && !utils.DirEmpty(stagingPluginsDir) {
+		utils.Info("Syncing iOS native plugins...")
+		_ = os.MkdirAll(targetSrcDir, 0755)
+		if err := utils.CopyDirectory(stagingPluginsDir, targetSrcDir); err != nil {
+			utils.Warn("Failed syncing plugin package trees inside iOS workspace: " + err.Error())
+		}
 	}
 
 	origWd, _ := os.Getwd()

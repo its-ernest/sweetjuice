@@ -67,10 +67,10 @@ ExecuteRefresh triggers a platform\-specific synchronization pass. For Android, 
 ## func ExecuteRun
 
 ```go
-func ExecuteRun(platform string)
+func ExecuteRun(platform string, force bool)
 ```
 
-ExecuteRun compiles, installs, and launches the application on a connected device.
+ExecuteRun compiles, installs, and launches the application on a connected device. When force is true for iOS, it skips gomobile bind and runs xtool directly.
 
 <a name="ManagePlugin"></a>
 ## func ManagePlugin

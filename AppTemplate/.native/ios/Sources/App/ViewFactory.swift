@@ -1,4 +1,5 @@
 import SwiftUI
+import Sweetjuice
 
 struct ViewFactory {
     @ViewBuilder
@@ -38,7 +39,7 @@ struct ViewFactory {
                 ]
                 if let data = try? JSONSerialization.data(withJSONObject: event),
                    let json = String(data: data, encoding: .utf8) {
-                    JuiceappHandleNativeAction("ui:event", json)
+                    SweetjuiceHandleNativeAction("ui:event", json)
                 }
             }) {
                 Text(node.text ?? "")

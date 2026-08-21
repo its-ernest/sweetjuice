@@ -23,6 +23,7 @@ func ShowUsage() {
 	utils.Println("  juice --refresh <platform>        Run platform sync: 'android' or 'ios'")
 	utils.Println("  juice --build <platform> <mode>   Compile binaries: 'debug' (APK/IPA), 'release' (APK/IPA), or 'bundle' (AAB)")
 	utils.Println("  juice --run <platform>            Compile, install, and execute application via ADB or xtool")
+	utils.Println("  juice --run --force <platform>    Run application without rebuilding bindings (assumes xcframework/aar present)")
 	utils.Println("  juice --run-cross <platform>      Cloud build (GitHub Actions), install, and execute")
 	utils.Println("  juice --setup cross               Setup GitHub Action based cross-compilation for iOS")
 	utils.Println("  juice --add <plugin-url>          Install a native Go/Mobile plugin")
@@ -137,13 +138,17 @@ func ExecuteBuild(platform, mode string) {
 	}
 }
 
-func ExecuteRun(platform string) {
+func ExecuteRun(platform string, force bool) {
 	if platform == "android" {
 		ExecuteBuild("android", "debug")
 		android.RunPipeline()
 	} else if platform == "ios" {
-		ExecuteBuild("ios", "debug")
-		ios.RunPipeline()
+		if force {
+			ios.RunPipeline()
+		} else {
+			ExecuteBuild("ios", "debug")
+			ios.RunPipeline()
+		}
 	} else {
 		utils.Error("Invalid platform. Use 'android' or 'ios'.")
 		os.Exit(1)
@@ -153,7 +158,7 @@ func ExecuteRun(platform string) {
 func ExecuteRunCross(platform string) {
 	if platform != "ios" {
 		utils.Warn("Cross-build is currently only optimized for 'ios'. Running standard local build for others...")
-		ExecuteRun(platform)
+		ExecuteRun(platform, false)
 		return
 	}
 

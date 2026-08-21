@@ -26,7 +26,7 @@ class UIManager: ObservableObject {
     }
 }
 
-struct JSONNode: Codable {
+class JSONNode: Codable {
     let type: String
     let id: String
     let props: [String: AnyCodable]?
@@ -37,7 +37,7 @@ struct JSONNode: Codable {
     let child: JSONNode?
 }
 
-struct OverlayNode: Codable {
+class OverlayNode: Codable {
     let type: String
     let id: String
     let child: JSONNode

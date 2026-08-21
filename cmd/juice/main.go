@@ -36,7 +36,17 @@ func main() {
 			utils.Error("Please specify a target platform: 'android' or 'ios'")
 			os.Exit(1)
 		}
-		commands.ExecuteRun(os.Args[2])
+		platform := os.Args[2]
+		force := false
+		if platform == "--force" {
+			if len(os.Args) < 4 {
+				utils.Error("Please specify a target platform after --force: 'android' or 'ios'")
+				os.Exit(1)
+			}
+			force = true
+			platform = os.Args[3]
+		}
+		commands.ExecuteRun(platform, force)
 	case "--run-cross":
 		if len(os.Args) < 3 {
 			utils.Error("Please specify a target platform: 'android' or 'ios'")

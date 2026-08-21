@@ -50,10 +50,10 @@ tasks:
       - GOOS=linux GOARCH=amd64 go build -o dist/linux/{{.CLI_NAME}} {{.SRC_PATH}}
       
       # Cross-compiling for Apple Silicon (M1/M2/M3) environments
-      - GOOS=darwin GOARCH=arm64 go build -o dist/darwin/{{.CLI_NAME}} {{.SRC_PATH}}
+      #- GOOS=darwin GOARCH=arm64 go build -o dist/darwin/{{.CLI_NAME}} {{.SRC_PATH}}
       
       # Cross-compiling for Windows environments
-      - GOOS=windows GOARCH=amd64 go build -o dist/windows/{{.CLI_NAME}}.exe {{.SRC_PATH}}
+      #- GOOS=windows GOARCH=amd64 go build -o dist/windows/{{.CLI_NAME}}.exe {{.SRC_PATH}}
       
       - echo "All production cross-compilation binaries staged inside ./dist/"
 

@@ -1,6 +1,6 @@
 name: SweetJuice
 bundleID: com.sweetjuice.app
-version: 1.0.0
+version: 1
 build: 1
 type: application
 platform: ios

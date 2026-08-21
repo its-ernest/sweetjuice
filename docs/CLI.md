@@ -11,6 +11,7 @@ Usage:
   juice --refresh <platform>        Run platform sync: 'android' or 'ios'
   juice --build <platform> <mode>   Sync environment and compile app binary (debug/release/bundle)
   juice --run <platform>            Compile, install, and execute application via ADB
+  juice --run --force <platform>    Run application without rebuilding bindings (assumes xcframework/aar present)
   juice --add <plugin-url>          Install a native Go/Mobile plugin
   juice --remove <plugin-url>       Uninstall a native Go/Mobile plugin
 ```
