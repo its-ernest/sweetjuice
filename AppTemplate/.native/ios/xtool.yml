@@ -4,7 +4,7 @@ version: 1
 build: 1
 type: application
 platform: ios
-deploymentTarget: 14.0
+deploymentTarget: 15.0
 targets:
   App:
     type: application
